@@ -12,7 +12,6 @@ import {
   FaChevronUp,
   FaChevronDown,
 } from "react-icons/fa";
-import { MdDashboard } from "react-icons/md";
 import logo from "../assets/icon_nobg.webp"
 
 interface SidebarProps {
@@ -26,7 +25,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarCollapsed, role }) => {
   const [isUsersOpen, setIsUsersOpen] = useState(false);
   const usersMenuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [activeHover, setActiveHover] = useState<string | null>(null);
 
   const isUserSubActive =
     location.pathname.startsWith("/students") ||

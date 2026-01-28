@@ -23,7 +23,7 @@ const StudentsTable: React.FC<StudentsTableProps> = ({ data, onRemoveRow }) => {
     const columns = [
         {
             name: "#",
-            cell: (row: any, index: number) => index + 1,
+            cell: (_: any, index: number) => index + 1,
             width: "60px",
             center: true,
         },
