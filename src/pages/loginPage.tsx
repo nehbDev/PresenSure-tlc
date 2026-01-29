@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import type { FormEvent } from "react";
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaMobileAlt } from "react-icons/fa";
+import {
+  FaEnvelope,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+  FaMobileAlt,
+} from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
 import logo from "../assets/icon_nobg.webp";
 import apiService from "../services/ApiService";
@@ -86,7 +92,11 @@ const LoginPage: React.FC = () => {
         position="top-center"
         toastOptions={{
           error: {
-            style: { background: "#fef2f2", color: "#b91c1c", borderRadius: "8px" },
+            style: {
+              background: "#fef2f2",
+              color: "#b91c1c",
+              borderRadius: "8px",
+            },
             iconTheme: { primary: "#b91c1c", secondary: "#fef2f2" },
           },
         }}
@@ -94,10 +104,10 @@ const LoginPage: React.FC = () => {
 
       {/* Header Section: Scaled for mobile */}
       <div className="w-full max-w-sm flex flex-col items-center mb-6 sm:mb-8">
-        <img 
-          src={logo} 
-          alt="PresenSure Logo" 
-          className="h-20 w-20 sm:h-28 sm:w-28 mb-4 transition-all" 
+        <img
+          src={logo}
+          alt="PresenSure Logo"
+          className="h-20 w-20 sm:h-28 sm:w-28 mb-4 transition-all"
         />
         <h1 className="text-3xl sm:text-4xl font-bold text-blue-700 tracking-tight">
           PresenSure
@@ -108,15 +118,24 @@ const LoginPage: React.FC = () => {
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/20 transition-all">
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-gray-800">Sign In</h2>
-            <p className="text-sm text-gray-500 mt-1">Enter your credentials to continue</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Enter your credentials to continue
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-5">
+          <form
+            onSubmit={handleSubmit}
+            autoComplete="off"
+            className="space-y-5"
+          >
             <input type="text" name="prevent_autofill" className="hidden" />
 
             {/* ID Field */}
             <div>
-              <label htmlFor="id" className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5 ml-1">
+              <label
+                htmlFor="id"
+                className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5 ml-1"
+              >
                 ID Number
               </label>
               <div className="relative group">
@@ -134,7 +153,10 @@ const LoginPage: React.FC = () => {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5 ml-1">
+              <label
+                htmlFor="password"
+                className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5 ml-1"
+              >
                 Password
               </label>
               <div className="relative group">
@@ -153,7 +175,11 @@ const LoginPage: React.FC = () => {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors px-1"
                   aria-label="Toggle password visibility"
                 >
-                  {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                  {showPassword ? (
+                    <FaEyeSlash className="h-5 w-5" />
+                  ) : (
+                    <FaEye className="h-5 w-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -178,28 +204,29 @@ const LoginPage: React.FC = () => {
           {/* --- Mobile App Link Section --- */}
           <div className="mt-8 pt-6 border-t border-gray-100">
             <div className="flex flex-col items-center text-center">
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
-                Mobile Access
-              </span>
+
+
               <a
-                href="https://expo.dev/accounts/nehbcy/projects/Presensure/builds/a51ff95e-e342-4f6d-8c9f-851d67ffb0b3"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-3 bg-blue-50 hover:bg-blue-100 px-4 py-3 rounded-xl transition-all w-full justify-center"
+                /* 1. Point to the file located in your public folder */
+                href="/https://drive.google.com/file/d/1kqISd2Z4nO-6jVzoT5LushKFjYB7kKtz/view?usp=sharing"
+                /* 2. Triggers the browser download behavior */
+                download="PresenSure.apk"
+                className="group flex items-center gap-3 bg-blue-50 hover:bg-blue-100 px-4 py-3 rounded-xl transition-all w-full justify-center cursor-pointer"
               >
                 <div className="bg-blue-600 text-white p-1.5 rounded-lg group-hover:scale-110 transition-transform">
                   <FaMobileAlt className="h-4 w-4" />
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-bold text-blue-900 leading-none">Download App</p>
-                  <p className="text-[10px] text-blue-600 mt-1">Available via Expo Build</p>
+                  <p className="text-xs font-bold text-blue-900 leading-none">
+                    Download App
+                  </p>
                 </div>
               </a>
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* Footer credit or version (optional) */}
       <p className="mt-8 text-blue-800/60 text-[10px] font-medium uppercase tracking-widest">
         © 2026 PresenSure
