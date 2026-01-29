@@ -208,7 +208,7 @@ const LoginPage: React.FC = () => {
 
               <a
                 /* 1. Point to the file located in your public folder */
-                href="/https://drive.google.com/file/d/1kqISd2Z4nO-6jVzoT5LushKFjYB7kKtz/view?usp=sharing"
+                href="https://drive.google.com/file/d/1kqISd2Z4nO-6jVzoT5LushKFjYB7kKtz/view?usp=sharing"
                 /* 2. Triggers the browser download behavior */
                 download="PresenSure.apk"
                 className="group flex items-center gap-3 bg-blue-50 hover:bg-blue-100 px-4 py-3 rounded-xl transition-all w-full justify-center cursor-pointer"
