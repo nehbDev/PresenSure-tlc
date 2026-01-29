@@ -211,7 +211,7 @@ const LoginPage: React.FC = () => {
                       This forces the browser to download the file instead of opening 
                       the Google Drive preview player.
                 */
-                href="https://drive.google.com/uc?export=download&id=1kqISd2Z4nO-6jVzoT5LushKFjYB7kKtz"
+                href="https://github.com/nehbDev/PresenSure-tlc/releases/download/v1.0/PresenSure.apk"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center gap-3 bg-blue-50 hover:bg-blue-100 px-4 py-3 rounded-xl transition-all w-full justify-center cursor-pointer"
