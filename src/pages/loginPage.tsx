@@ -204,13 +204,16 @@ const LoginPage: React.FC = () => {
           {/* --- Mobile App Link Section --- */}
           <div className="mt-8 pt-6 border-t border-gray-100">
             <div className="flex flex-col items-center text-center">
-
-
               <a
-                /* 1. Point to the file located in your public folder */
-                href="https://drive.google.com/file/d/1kqISd2Z4nO-6jVzoT5LushKFjYB7kKtz/view?usp=sharing"
-                /* 2. Triggers the browser download behavior */
-                download="PresenSure.apk"
+                /* KEY FIX: 
+                   1. Removed the leading "/" to make it an absolute external URL.
+                   2. Changed "file/d/.../view" to "uc?export=download&id=..."
+                      This forces the browser to download the file instead of opening 
+                      the Google Drive preview player.
+                */
+                href="https://drive.google.com/uc?export=download&id=1kqISd2Z4nO-6jVzoT5LushKFjYB7kKtz"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group flex items-center gap-3 bg-blue-50 hover:bg-blue-100 px-4 py-3 rounded-xl transition-all w-full justify-center cursor-pointer"
               >
                 <div className="bg-blue-600 text-white p-1.5 rounded-lg group-hover:scale-110 transition-transform">
@@ -219,6 +222,9 @@ const LoginPage: React.FC = () => {
                 <div className="text-left">
                   <p className="text-xs font-bold text-blue-900 leading-none">
                     Download App
+                  </p>
+                  <p className="text-[10px] text-blue-600 mt-1">
+                    Direct APK Download
                   </p>
                 </div>
               </a>
