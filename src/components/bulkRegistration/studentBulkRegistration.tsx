@@ -5,53 +5,58 @@ import FileUploader from "../fileUploaders/studentFileUploader";
 import ImportTabs from "../tabs/studentbulkRegistrationTabs";
 import apiService from "../../services/ApiService";
 
-// 1. Define response types
-interface ImportUsersApiData {
-  to_enroll: Array<{
-    id: string;
-    firstname: string;
-    middle_initial: string;
-    lastname: string;
-    suffix?: string;
-    sex: string;
-    course?: string;
-    year_level?: string;
-    section?: string;
-    [key: string]: any;
-  }>;
-  already_enrolled: any[];
+// --- 1. Corrected Interface to match Backend Response ---
+interface StudentData {
+  id: string;
+  firstname: string;
+  middle_initial: string;
+  lastname: string;
+  suffix?: string;
+  sex: string;
+  program: string;    // Changed from 'course' to match Backend
+  year_level: string; 
+  block: string;      // Changed from 'section' to match Backend
+  [key: string]: any;
 }
+
+interface ImportUsersApiData {
+  to_enroll: StudentData[];
+  already_enrolled: StudentData[];
+}
+
 interface ImportUsersResponse {
   data: ImportUsersApiData;
   message?: string;
   error?: string;
 }
+
 interface StoreBulkUsersResponse {
   message?: string;
-  error?: string;
+  inserted?: number;
+  total_received?: number;
+  errors?: string[];
 }
 
-const studentBulkRegistration: React.FC = () => {
+const StudentBulkRegistration: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
   const [importedData, setImportedData] = useState<ImportUsersApiData>({
     to_enroll: [],
     already_enrolled: [],
   });
-  const [selectedCategory, setSelectedCategory] = useState<
-    "to_enroll" | "already_enrolled"
-  >("to_enroll");
+
+  const [selectedCategory, setSelectedCategory] = useState<"to_enroll" | "already_enrolled">("to_enroll");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
       const validExtensions = ["xlsx", "xls", "csv"];
       const extension = selectedFile.name.split(".").pop()?.toLowerCase();
+      
       if (!extension || !validExtensions.includes(extension)) {
-        toast.error(
-          "Invalid file type. Only .xlsx, .xls, or .csv files are allowed."
-        );
+        toast.error("Invalid file type. Only .xlsx, .xls, or .csv files are allowed.");
         return;
       }
       setFile(selectedFile);
@@ -63,18 +68,18 @@ const studentBulkRegistration: React.FC = () => {
       toast.error("Please select a file first.");
       return;
     }
+    
     const formData = new FormData();
     formData.append("file", file);
     setIsUploading(true);
+    
     try {
-      // 2. Use generics for the correct API response
       const response = await apiService.post<ImportUsersResponse>(
         "/importStudent",
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
+
       if (response.data && response.data.data) {
         toast.success(response.data.message || "Upload successful!");
         setImportedData({
@@ -86,11 +91,13 @@ const studentBulkRegistration: React.FC = () => {
         toast.error("Unexpected response structure.");
       }
     } catch (error: any) {
-      const message =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        "Upload failed.";
-      toast.error(message);
+      const message = error.response?.data?.error || error.response?.data?.message || "Upload failed.";
+      // Check if it's a format error (e.g., missing columns)
+      if (typeof message === 'string' && message.includes("Invalid file format")) {
+         toast.error(message, { duration: 5000 });
+      } else {
+         toast.error(message);
+      }
     } finally {
       setIsUploading(false);
       setFile(null);
@@ -99,6 +106,7 @@ const studentBulkRegistration: React.FC = () => {
 
   const handleSaveToDatabase = async () => {
     const usersToEnroll = importedData.to_enroll || [];
+    
     if (usersToEnroll.length === 0) {
       toast.error("No users to enroll.");
       return;
@@ -106,21 +114,27 @@ const studentBulkRegistration: React.FC = () => {
 
     try {
       setIsSaving(true);
-
-      // Debug: Log what's being sent
-      console.log("Sending users:", usersToEnroll);
-
       const response = await apiService.post<StoreBulkUsersResponse>(
         "/storeBulkStudent",
-        {
-          users: usersToEnroll,
-        }
+        { users: usersToEnroll }
       );
 
-      console.log("Response:", response);
-      toast.success(response.data.message || "Users saved successfully!");
-      setImportedData({ to_enroll: [], already_enrolled: [] });
-      setSelectedCategory("to_enroll");
+      const inserted = response.data.inserted || 0;
+      const total = response.data.total_received || 0;
+
+      if (inserted > 0) {
+        toast.success(`Successfully enrolled ${inserted} out of ${total} students!`);
+        // Clear the list after success
+        setImportedData({ to_enroll: [], already_enrolled: [] });
+      } else {
+        toast.success("Process complete, but no new students were enrolled (duplicates skipped).");
+      }
+
+      // Show warnings if any specific rows failed
+      if (response.data.errors && response.data.errors.length > 0) {
+          toast.error(`Some rows failed: \n${response.data.errors.slice(0, 3).join('\n')}...`);
+      }
+
     } catch (error: any) {
       console.error("Save error:", error);
       const message = error.response?.data?.message || "Failed to save users.";
@@ -129,32 +143,27 @@ const studentBulkRegistration: React.FC = () => {
       setIsSaving(false);
     }
   };
+
   return (
     <div className="space-y-4">
       <Toaster
         position="top-center"
-        containerClassName="mt-10 text-lg" // Adjust margin-top as needed
+        containerClassName="mt-10 text-lg"
         toastOptions={{
           success: {
-            style: {
-              background: "#f0fdf4",
-              color: "#166534",
-            },
+            style: { background: "#f0fdf4", color: "#166534" },
           },
           error: {
-            style: {
-              background: "#fef2f2",
-              color: "#991b1b",
-            },
+            style: { background: "#fef2f2", color: "#991b1b" },
           },
           style: {
-            maxWidth: "400px",
-            minWidth: "300px",
+            maxWidth: "500px",
             whiteSpace: "pre-wrap",
             wordWrap: "break-word",
           },
         }}
       />
+      
       <Breadcrumbs
         crumbs={[
           { label: "Students", to: "/students" },
@@ -162,7 +171,7 @@ const studentBulkRegistration: React.FC = () => {
         ]}
       />
 
-      {/* File uploader and template */}
+      {/* File uploader */}
       <div className="bg-white rounded-lg shadow p-4 mb-3">
         <FileUploader
           file={file}
@@ -172,8 +181,8 @@ const studentBulkRegistration: React.FC = () => {
         />
       </div>
 
-      {(importedData.to_enroll.length > 0 ||
-        importedData.already_enrolled.length > 0) && (
+      {/* Table Tabs */}
+      {(importedData.to_enroll.length > 0 || importedData.already_enrolled.length > 0) && (
         <ImportTabs
           data={importedData}
           selected={selectedCategory}
@@ -186,4 +195,4 @@ const studentBulkRegistration: React.FC = () => {
   );
 };
 
-export default studentBulkRegistration;
+export default StudentBulkRegistration;

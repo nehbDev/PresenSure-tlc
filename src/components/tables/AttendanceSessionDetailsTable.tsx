@@ -6,15 +6,15 @@ import {
   FaQuestionCircle,
 } from "react-icons/fa";
 import noProfile from "../../assets/noProfile.webp";
-import type { StudentResult, LocationLog } from "../../types/attendanceTypes";
-import TableSkeleton from "../contentLoader/TableSkeleton"; // Import TableSkeleton
+import type { StudentResult } from "../../types/attendanceTypes";
+import TableSkeleton from "../contentLoader/TableSkeleton"; 
 
 interface AttendanceTableProps {
   title: string;
   students: StudentResult[];
   headerColor: "blue" | "pink";
   onRowClick: (student: StudentResult) => void;
-  loading?: boolean; // Add loading prop
+  loading?: boolean; 
 }
 
 const AttendanceSessionDetailsTable: React.FC<AttendanceTableProps> = ({
@@ -22,21 +22,27 @@ const AttendanceSessionDetailsTable: React.FC<AttendanceTableProps> = ({
   students,
   headerColor,
   onRowClick,
-  loading = false, // Default to false
+  loading = false, 
 }) => {
   
-  // --- Helpers ---
-  const formatTime = (dateStr: string | null) => {
-    if (!dateStr) return "--:--";
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return "--:--";
-    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-  };
+  // --- Helper: Format "15:30:00" to "3:30 PM" ---
+  const formatTimeString = (timeStr: string) => {
+    if (!timeStr || timeStr === "--" || timeStr === "--:--") return "--:--";
+    
+    // Check if it's a full ISO string or just time
+    const [hours, minutes] = timeStr.split(':');
+    
+    // Safety check
+    if (!hours || !minutes) return timeStr;
 
-  const getBleTimes = (logs: LocationLog[]) => {
-    if (!logs || logs.length === 0) return { timeIn: "--:--", timeOut: "--:--" };
-    const sortedLogs = [...logs].sort((a, b) => new Date(a.detected_at).getTime() - new Date(b.detected_at).getTime());
-    return { timeIn: formatTime(sortedLogs[0].detected_at), timeOut: formatTime(sortedLogs[sortedLogs.length - 1].detected_at) };
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    
+    return date.toLocaleTimeString("en-US", { 
+      hour: "numeric", 
+      minute: "2-digit", 
+      hour12: true 
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -95,7 +101,6 @@ const AttendanceSessionDetailsTable: React.FC<AttendanceTableProps> = ({
             <tbody className="divide-y divide-gray-100">
               {students.length > 0 ? (
                 students.map((student) => {
-                  const { timeIn, timeOut } = getBleTimes(student.locations_data);
                   return (
                     <tr
                       key={student.student_id}
@@ -132,11 +137,13 @@ const AttendanceSessionDetailsTable: React.FC<AttendanceTableProps> = ({
                           {student.final_status}
                         </span>
                       </td>
+                      
+                      {/* UPDATED: Use Direct Time Fields */}
                       <td className="px-6 py-3 text-center font-mono text-gray-700">
-                        {timeIn}
+                        {formatTimeString(student.time_in)}
                       </td>
                       <td className="px-6 py-3 text-center font-mono text-gray-700">
-                        {timeOut}
+                        {formatTimeString(student.time_out)}
                       </td>
                     </tr>
                   );

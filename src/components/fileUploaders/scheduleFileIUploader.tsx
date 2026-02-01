@@ -16,15 +16,111 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     const handleDownloadTemplate = () => {
-        const templateData = [
-            ["SUBJECT CODE", "DESCRIPTION", "DAYS", "TIME", "TYPE", "ROOM", "INSTRUCTOR ID"],
-            ["CS101", "Intro to CS", "MWF", "08:00-09:00", "Lecture", "Room 201", "2000-0001"],
+        // 1. Define Styles (Center, Bold, Borders)
+        const centerStyle = { 
+            alignment: { horizontal: "center", vertical: "center" } 
+        };
+        
+        const titleStyle = { 
+            font: { bold: true, sz: 14 }, 
+            alignment: { horizontal: "center", vertical: "center" } 
+        };
+
+        const subTitleStyle = {
+             font: { bold: true }, 
+             alignment: { horizontal: "center", vertical: "center" } 
+        };
+
+        const headerRowStyle = {
+            font: { bold: true, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4472C4" } }, // Blue background for columns
+            alignment: { horizontal: "center", vertical: "center" },
+            border: {
+                top: { style: "thin" },
+                bottom: { style: "thin" },
+                left: { style: "thin" },
+                right: { style: "thin" }
+            }
+        };
+
+        const cellStyle = {
+             border: {
+                top: { style: "thin" },
+                bottom: { style: "thin" },
+                left: { style: "thin" },
+                right: { style: "thin" }
+            }
+        };
+
+        // 2. Define the Top Header content
+        // We match the columns from your CSV: Subject_Code through Instructor (7 columns total, index 0-6)
+        const topHeaders = [
+            [{ v: "The Lewis College", s: titleStyle }],
+            [{ v: "479 Magsaysay st., Cogon, Sorsogon City", s: centerStyle }],
+            [{ v: "SCHEDULE LIST IMPORT TEMPLATE", s: subTitleStyle }], // Adapted title for context
+            [], // Empty Row for spacing
+            [{ v: "HIGHER EDUCATION DEPARTMENT", s: subTitleStyle }],
+            [], // Empty Row for spacing
         ];
 
+        // 3. Define Column Headers (Based on your CSV file)
+        const columns = [
+            "Subject_Code", 
+            "Description", 
+            "Days", 
+            "Time", 
+            "Type", 
+            "Room", 
+            "Instructor"
+        ];
+
+        // Apply style to column headers
+        const columnRow = columns.map(col => ({ v: col, s: headerRowStyle }));
+
+        // 4. Define Sample Data (Based on your CSV file)
+        const sampleData = [
+            { v: "CoC 5101-A", s: cellStyle },
+            { v: "INTRODUCTION TO COMPUTING", s: cellStyle },
+            { v: "MWF", s: cellStyle },
+            { v: "08:00 AM - 09:00 AM", s: cellStyle },
+            { v: "Lecture", s: cellStyle },
+            { v: "ComLab - A", s: cellStyle },
+            { v: "2000-0022", s: cellStyle },
+        ];
+
+        // 5. Combine all rows
+        const wsData = [
+            ...topHeaders,
+            columnRow,
+            sampleData
+        ];
+
+        // 6. Create Workbook and Worksheet
         const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(templateData);
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // 7. Add Merges 
+        // We merge columns A to G (Index 0 to 6) for the top headers so they center properly
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Row 1: The Lewis College
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Row 2: Address
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }, // Row 3: Title
+            { s: { r: 4, c: 0 }, e: { r: 4, c: 6 } }, // Row 5: Department
+        ];
+
+        // 8. Set Column Widths for better visibility
+        ws['!cols'] = [
+            { wch: 15 }, // Subject_Code
+            { wch: 40 }, // Description
+            { wch: 10 }, // Days
+            { wch: 20 }, // Time
+            { wch: 15 }, // Type
+            { wch: 15 }, // Room
+            { wch: 15 }, // Instructor
+        ];
+
         XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-        XLSX.writeFile(wb, "schedules_template.xlsx");
+        XLSX.writeFile(wb, "schedule_template.xlsx");
     };
 
     return (

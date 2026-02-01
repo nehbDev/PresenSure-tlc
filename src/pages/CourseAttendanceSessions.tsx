@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
-import { FaFileExcel } from "react-icons/fa";
+import { Toaster } from "react-hot-toast";
 import Breadcrumbs from "../layout/Breadcrumbs";
 import apiService from "../services/ApiService";
 import ContentLoader from "react-content-loader"; // Import for Header Skeleton
@@ -14,7 +13,6 @@ import AttendancePeriodsTable, { type PeriodsApiResponse } from "../components/t
 import AttendanceSchedulesTable, { type SessionData } from "../components/tables/AttendanceSchedulesTable";
 
 // Import Exporter
-import { exportPeriodsToExcel } from "../utils/excelExporterPeriods"; 
 
 // --- API Response Interfaces ---
 interface SchedulesApiResponse {
@@ -87,14 +85,7 @@ const CourseAttendanceSessions: React.FC = () => {
   const isLoading = activeTab === "schedules" ? loadingSchedules : loadingPeriods;
 
   // --- Handlers ---
-  const handleExportPeriods = () => {
-    if (!periodsData) {
-        toast.error("No data to export");
-        return;
-    }
-    exportPeriodsToExcel(periodsData);
-    toast.success("Excel downloaded successfully!");
-  };
+
 
   const crumbs = [
     { label: "Attendance Records", to: "/records" },
@@ -113,7 +104,7 @@ const CourseAttendanceSessions: React.FC = () => {
         {isLoading && !activeCourseInfo.code ? (
           <HeaderSkeleton />
         ) : (
-          <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#2D336B] flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-600 flex flex-col md:flex-row justify-between items-center gap-4">
             {/* Left Side: Title */}
             <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
               {activeCourseInfo.code || "Loading..."}
@@ -121,17 +112,7 @@ const CourseAttendanceSessions: React.FC = () => {
               <span className="text-lg text-gray-600">{activeCourseInfo.desc}</span>
             </h1>
 
-            {/* Right Side: Export Button (Only if Periods tab is active) */}
-            {activeTab === "periods" && (
-              <button
-                onClick={handleExportPeriods}
-                disabled={loadingPeriods || !periodsData}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaFileExcel className="w-4 h-4" />
-                Export Summary
-              </button>
-            )}
+
           </div>
         )}
       </div>

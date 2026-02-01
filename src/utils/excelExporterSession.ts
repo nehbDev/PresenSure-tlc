@@ -1,55 +1,51 @@
+// src/utils/excelExporterSession.ts
+
 // @ts-ignore
 import XLSX from "xlsx-js-style"; 
-import type { StudentResult, LocationLog } from "../types/attendanceTypes";
+import type { StudentResult } from "../types/attendanceTypes";
 
 // --- Helpers ---
 
-// 1. For Student Logs (Full Date Strings like "2023-10-10 08:30:00")
-const formatTime = (dateStr: string | null) => {
-  if (!dateStr) return "--:--";
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return "--:--";
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
-
-// 2. NEW: For Session Headers (Time-only Strings like "13:30:00")
+// Formats "15:30:00" to "3:30 PM"
 const formatSqlTime = (timeStr: string | null) => {
-  if (!timeStr) return "";
-  // Manually parse to ensure consistency regardless of Date object quirks
+  if (!timeStr || timeStr === "--" || timeStr === "--:--") return "--:--";
+  
+  // Handle cases where it might be a full ISO string (though backend sends H:i:s)
+  if (timeStr.includes("T")) {
+    const date = new Date(timeStr);
+    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  }
+
   const [hours, minutes] = timeStr.split(':');
   let h = parseInt(hours, 10);
   const m = minutes; 
   const ampm = h >= 12 ? 'PM' : 'AM';
-  
   h = h % 12;
-  h = h ? h : 12; // the hour '0' should be '12'
-  
+  h = h ? h : 12; 
   return `${h}:${m} ${ampm}`;
 };
 
-const getBleTimes = (logs: LocationLog[]) => {
-  if (!logs || logs.length === 0) return { timeIn: "--:--", timeOut: "--:--" };
-  const sortedLogs = [...logs].sort(
-    (a, b) => new Date(a.detected_at).getTime() - new Date(b.detected_at).getTime()
-  );
-  return {
-    timeIn: formatTime(sortedLogs[0].detected_at),
-    timeOut: formatTime(sortedLogs[sortedLogs.length - 1].detected_at),
-  };
-};
-
+// --- Export Function ---
 export const exportAttendanceToExcel = (
-  sessionData: any,
+  sessionData: any, 
   students: StudentResult[]
 ) => {
   if (!students || students.length === 0) return;
 
   const males = students.filter((s) => s.sex === "Male" || s.sex === "M");
   const females = students.filter((s) => s.sex === "Female" || s.sex === "F");
+
+  // --- 1. GET SEMESTER INFO ---
+  let semesterHeader = "SEMESTER / SCHOOL YEAR"; 
+  try {
+    const cachedSemester = localStorage.getItem("semesterInfo");
+    if (cachedSemester) {
+        const sem = JSON.parse(cachedSemester);
+        semesterHeader = `${sem.description}, SY ${sem.schoolyear_start}-${sem.schoolyear_end}`;
+    }
+  } catch (e) {
+    console.error("Error parsing semester info", e);
+  }
 
   // --- STYLES CONFIGURATION ---
   const styles = {
@@ -59,6 +55,10 @@ export const exportAttendanceToExcel = (
     },
     subTitle: {
       font: { sz: 11 },
+      alignment: { horizontal: "center", vertical: "center" },
+    },
+    semHeader: { 
+      font: { bold: true, sz: 11 },
       alignment: { horizontal: "center", vertical: "center" },
     },
     tableHeader: {
@@ -77,10 +77,14 @@ export const exportAttendanceToExcel = (
     },
     cellCenter: {
        alignment: { horizontal: "center", vertical: "center" }
+    },
+    // Style for status (Present/Late/Absent)
+    statusCell: {
+        alignment: { horizontal: "center", vertical: "center" }
     }
   };
 
-  const COLS = [ "No.", "Student Name", "Program & Section", "Status", "Time In", "Time Out", "Mins Late", "Notes" ];
+  const COLS = [ "No.", "Student Name", "Program & Section", "Status", "Time In", "Time Out" ];
   const totalCols = COLS.length - 1; 
 
   // --- BUILD DATA ---
@@ -98,19 +102,20 @@ export const exportAttendanceToExcel = (
   data.push(["HIGHER EDUCATION DEPARTMENT"]); 
   merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: totalCols } });
 
+  data.push([semesterHeader.toUpperCase()]);
+  merges.push({ s: { r: 3, c: 0 }, e: { r: 3, c: totalCols } });
+
   data.push([]); 
 
   data.push(["ATTENDANCE REPORT"]); 
-  merges.push({ s: { r: 4, c: 0 }, e: { r: 4, c: totalCols } });
+  merges.push({ s: { r: 5, c: 0 }, e: { r: 5, c: totalCols } });
 
   data.push([]); 
 
-  // Metadata
   const courseStr = `${sessionData.course?.code || ""} - ${sessionData.course?.description || ""}`;
   const instructorStr = sessionData.instructor?.name || "N/A";
   const roomStr = sessionData.course?.room || "N/A";
   
-  // Format the Session Times here using the new helper
   const startTimeFormatted = formatSqlTime(sessionData.start_time);
   const endTimeFormatted = formatSqlTime(sessionData.end_time);
 
@@ -119,7 +124,6 @@ export const exportAttendanceToExcel = (
   data.push(["", sessionData.date, "", "Time:", `${startTimeFormatted} - ${endTimeFormatted}`]);
   data.push([]); 
 
-  // Row 10: Column Headers
   const headerRowIndex = data.length; 
   data.push(COLS);
 
@@ -131,13 +135,20 @@ export const exportAttendanceToExcel = (
     rowStyles[sectionRowIdx] = styles.sectionHeader; 
 
     males.forEach((s, index) => {
-      const { timeIn, timeOut } = getBleTimes(s.locations_data);
+      // UPDATED: Directly use the fields from backend
+      const timeIn = formatSqlTime(s.time_in);
+      const timeOut = formatSqlTime(s.time_out);
+      
       const fullName = `${s.lastname}, ${(s.student_name || "").split(",")[1] || ""}`;
       const programStr = s.program && s.program !== 'N/A' ? `${s.program} ${s.year_level}-${s.block}` : "N/A";
 
       data.push([
-        index + 1, fullName, programStr, s.final_status,
-        timeIn, timeOut, s.minutes_late > 0 ? s.minutes_late : "-", s.note || ""
+        index + 1, 
+        fullName, 
+        programStr, 
+        s.final_status,
+        timeIn, 
+        timeOut
       ]);
     });
   }
@@ -150,32 +161,43 @@ export const exportAttendanceToExcel = (
     rowStyles[sectionRowIdx] = styles.sectionHeader;
 
     females.forEach((s, index) => {
-      const { timeIn, timeOut } = getBleTimes(s.locations_data);
+      // UPDATED: Directly use the fields from backend
+      const timeIn = formatSqlTime(s.time_in);
+      const timeOut = formatSqlTime(s.time_out);
+
       const fullName = `${s.lastname}, ${(s.student_name || "").split(",")[1] || ""}`;
       const programStr = s.program && s.program !== 'N/A' ? `${s.program} ${s.year_level}-${s.block}` : "N/A";
 
       data.push([
-        index + 1, fullName, programStr, s.final_status,
-        timeIn, timeOut, s.minutes_late > 0 ? s.minutes_late : "-", s.note || ""
+        index + 1, 
+        fullName, 
+        programStr, 
+        s.final_status,
+        timeIn, 
+        timeOut
       ]);
     });
   }
 
-  // --- CREATE WORKSHEET ---
   const ws = XLSX.utils.aoa_to_sheet(data);
   ws["!merges"] = merges;
+  
   ws["!cols"] = [
-    { wch: 5 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, 
-    { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 25 }
+    { wch: 5 },  // No.
+    { wch: 30 }, // Name
+    { wch: 20 }, // Program
+    { wch: 12 }, // Status
+    { wch: 15 }, // Time In (Widened slightly)
+    { wch: 15 }, // Time Out (Widened slightly)
   ];
 
-  // --- APPLY STYLES ---
   if (ws["A1"]) ws["A1"].s = styles.title;
   if (ws["A2"]) ws["A2"].s = styles.subTitle;
   if (ws["A3"]) ws["A3"].s = styles.subTitle;
-  if (ws["A5"]) ws["A5"].s = styles.title;
+  if (ws["A4"]) ws["A4"].s = styles.semHeader;
+  if (ws["A6"]) ws["A6"].s = styles.title;
 
-  const colLetters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+  const colLetters = ["A", "B", "C", "D", "E", "F"]; 
   colLetters.forEach(col => {
       const cellRef = `${col}${headerRowIndex + 1}`; 
       if (ws[cellRef]) ws[cellRef].s = styles.tableHeader;
@@ -191,13 +213,13 @@ export const exportAttendanceToExcel = (
   const range = XLSX.utils.decode_range(ws['!ref']!);
   
   for (let R = dataStartRow; R <= range.e.r; ++R) {
-      [3, 4, 5, 6].forEach(C => {
+      // Apply center style to Status, Time In, Time Out columns
+      [3, 4, 5].forEach(C => {
           const cellRef = XLSX.utils.encode_cell({r: R, c: C});
           if (ws[cellRef]) ws[cellRef].s = styles.cellCenter;
       });
   }
 
-  // --- WRITE FILE ---
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Attendance");
   const safeCode = (sessionData?.course?.code || "Report").replace(/[^a-z0-9]/gi, '_');

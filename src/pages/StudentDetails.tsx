@@ -133,18 +133,18 @@ const StudentDetails: React.FC = () => {
 
   const handleArchive = async () => {
     if (!id) return;
-    
+
     try {
       setIsArchiving(true);
       await apiService.delete(`/archiveStudent/${id}`);
       await queryClient.invalidateQueries({ queryKey: ["archived_students"] });
-      
+
       toast.success("Student archived successfully");
       setShowArchiveModal(false);
 
       // 3. THE FIX: Force the list page to refresh next time it loads
-      await queryClient.invalidateQueries({ queryKey: ["students"] }); 
-      
+      await queryClient.invalidateQueries({ queryKey: ["students"] });
+
       setTimeout(() => {
         navigate("/students");
       }, 1000);
@@ -340,7 +340,6 @@ const StudentDetails: React.FC = () => {
                             alt="Instructor"
                             className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 shadow-sm"
                           />
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                         </div>
                         <div className="overflow-hidden">
                           <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">

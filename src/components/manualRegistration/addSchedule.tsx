@@ -348,8 +348,8 @@ const AddSchedule: React.FC = () => {
                   <input type="text" name="description" value={subject.description} onChange={handleSubjectChange} placeholder="Subject Name" className="w-full h-[42px] border px-3 rounded-md outline-none focus:ring-2 focus:ring-blue-600" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Units (1-6) <span className="text-red-500">*</span></label>
-                  <input type="number" name="units" min="1" max="6" value={subject.units} onChange={handleSubjectChange} className="w-full h-[42px] border px-3 rounded-md outline-none focus:ring-2 focus:ring-blue-600" />
+                  <label className="text-sm font-medium text-gray-700 block mb-1">Units<span className="text-red-500">*</span></label>
+                  <input type="number" name="units" min="1" max="3" value={subject.units} onChange={handleSubjectChange} className="w-full h-[42px] border px-3 rounded-md outline-none focus:ring-2 focus:ring-blue-600" />
                 </div>
               </div>
             </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import apiService from "../services/ApiService";
+import PolicyEnforcer from "./PolicyEnforcer"; // ✅ Import the Enforcer
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,8 +14,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [userName, setUserName] = useState<string | null>("Guest");
   const [userEmail, setUserEmail] = useState<string | null>("");
   const [semesterInfo, setSemesterInfo] = useState<any>(null);
-  
-  // ✅ 1. Add Loading State (Default to true so skeleton shows immediately)
   const [isSemesterLoading, setIsSemesterLoading] = useState(true);
 
   const [notifications, setNotifications] = useState([
@@ -39,13 +38,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   useEffect(() => {
     const fetchSemester = async () => {
-      // ✅ Start loading
       setIsSemesterLoading(true); 
       try {
         const cachedData = localStorage.getItem('semesterInfo');
         if (cachedData) {
           setSemesterInfo(JSON.parse(cachedData));
-          setIsSemesterLoading(false); // ✅ Stop loading if cache found
+          setIsSemesterLoading(false);
           return;
         }
         const response = await apiService.get("/active-semester");
@@ -55,7 +53,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       } catch (error) {
         console.error("Failed to fetch active semester:", error);
       } finally {
-        // ✅ Stop loading when done (success or error)
         setIsSemesterLoading(false); 
       }
     };
@@ -64,6 +61,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-gray-50">
+      
+      {/* ✅ Add PolicyEnforcer Here. It checks logic silently unless Policy is missing. */}
+      {role === 'instructor' && <PolicyEnforcer />}
+
       <Sidebar
         isSidebarCollapsed={isSidebarCollapsed}
         role={role}
@@ -82,7 +83,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           userEmail={userEmail}
           role={role}
           semesterInfo={semesterInfo}
-          // ✅ 2. Pass the loading state to Header
           loadingSemester={isSemesterLoading} 
           notifications={notifications}
           setNotifications={setNotifications}

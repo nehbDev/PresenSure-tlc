@@ -185,17 +185,7 @@ const AttendanceSessionDetails: React.FC = () => {
               <span className="text-2xl font-bold text-blue-800">
                 {sessionData?.course?.schedule_type || "Lecture"}
               </span>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wide ${
-                  sessionData?.status === "completed"
-                    ? "bg-green-100 text-green-700 border-green-200"
-                    : sessionData?.status === "active"
-                      ? "bg-blue-100 text-blue-700 border-blue-200"
-                      : "bg-gray-100 text-gray-600 border-gray-200"
-                }`}
-              >
-                {sessionData?.status}
-              </span>
+
             </div>
             {/* Room badge removed from here */}
           </div>
@@ -271,7 +261,7 @@ const AttendanceSessionDetails: React.FC = () => {
       <div className="bg-white p-6 rounded-lg shadow-md mt-6">
         {/* Title Header */}
         <div className="flex items-center gap-2 mb-6">
-          <h2 className="text-xl font-bold text-gray-800 border-l-4 border-blue-600 pl-3">
+          <h2 className="text-xl font-bold text-gray-800 ">
             Student List
           </h2>
         </div>

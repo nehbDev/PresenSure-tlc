@@ -79,11 +79,6 @@ const AttendanceRecord: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Removed local state for courses and loading
-  // const [allCourses, setAllCourses] = useState<Course[]>([]);
-  // const [myCourses, setMyCourses] = useState<Course[]>([]);
-  // const [loading, setLoading] = useState(false);
-
   const [search, setSearch] = useState("");
   const [instructorFilter, setInstructorFilter] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "my">("all");
@@ -102,7 +97,7 @@ const AttendanceRecord: React.FC = () => {
   const currentUserId = user?.user_id;
   const isAdmin = userRole === "admin" || userRole === "administrator";
 
-  // Force "my" tab if instructor
+  // Force "my" tab if NOT admin
   useEffect(() => {
     if (!isAdmin) {
         setActiveTab("my");
@@ -131,28 +126,23 @@ const AttendanceRecord: React.FC = () => {
     isError,
     error,
   } = useQuery({
-    queryKey: ["attendance_courses", currentUserId, userRole], // Unique key per user/role
+    queryKey: ["attendance_courses", currentUserId, userRole], 
     queryFn: async () => {
       const safeId = currentUserId ? String(currentUserId) : "";
       const safeRole = userRole || "student";
-
-      // Debug log (optional, matching your Student style)
-      console.log(`%c[Network] Fetching courses...`, "color: #00ff00; font-weight: bold;");
 
       const response = await apiService.get(
         `/getCourses?user_id=${encodeURIComponent(safeId)}&role=${encodeURIComponent(safeRole)}`
       );
       
-      // Return the data directly
       return (response.data || response) as unknown as ApiResponse;
     },
-    enabled: !!currentUserId, // Only run if we have a user ID
+    enabled: !!currentUserId, 
     staleTime: 1000 * 60 * 10, // 5 Minutes
     retry: 1,
   });
 
   // --- 3. HANDLE DATA TRANSFORMATION ---
-  // Memoize the mapped data to prevent re-calculations on every render
   const allCourses = useMemo(() => {
     return apiResponse?.success && apiResponse.all_records 
       ? mapCourses(apiResponse.all_records) 
@@ -169,7 +159,6 @@ const AttendanceRecord: React.FC = () => {
   useEffect(() => {
     if (isError) {
       console.error("Error fetching courses:", error);
-      // Try to extract backend error message if available
       const err = error as any;
       if (err.response) {
         toast.error(err.response.data?.message || "Failed to load courses");
@@ -231,7 +220,7 @@ const AttendanceRecord: React.FC = () => {
   };
 
   const crumbs = [{ label: "Attendance Records" }];
-  const loading = isLoading; // Map isLoading to loading for child components
+  const loading = isLoading; 
 
   return (
     <div className="space-y-4">
@@ -269,14 +258,19 @@ const AttendanceRecord: React.FC = () => {
 
       {/* Filters Row */}
       <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-white rounded-md shadow-sm border border-gray-200">
-        <div className="min-h-[42px] w-48 flex-shrink-0">
-          <DropdownFilter
-            label="Instructor"
-            options={instructorOptions}
-            selected={instructorFilter}
-            setSelected={setInstructorFilter}
-          />
-        </div>
+        
+        {/* --- CONDITIONALLY RENDER DROPDOWN --- */}
+        {/* ONLY show filter if Admin AND viewing 'All Records' */}
+        {isAdmin && activeTab === "all" && (
+          <div className="min-h-[42px] w-48 flex-shrink-0">
+            <DropdownFilter
+              label="Instructor"
+              options={instructorOptions}
+              selected={instructorFilter}
+              setSelected={setInstructorFilter}
+            />
+          </div>
+        )}
 
         <div className="flex-1 min-h-[42px]">
           <div className="relative flex items-center h-full">

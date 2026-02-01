@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import DataTable from "react-data-table-component";
 import type { TableColumn, TableStyles } from "react-data-table-component";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaFileExcel } from "react-icons/fa";
 import dayjs from "dayjs";
-import TableSkeleton from "../contentLoader/TableSkeleton"; // 1. Import Skeleton
+import toast from "react-hot-toast";
+// IMPORT THE UTILITY
+import { exportPeriodsToExcel } from "../../utils/excelExporterPeriods";
+import TableSkeleton from "../contentLoader/TableSkeleton";
 
 // --- Interfaces ---
 
@@ -24,7 +27,7 @@ export interface StudentPeriodData {
   late: number;
   absent: number;
   attendance_percentage: number;
-  attendance_grade: number; 
+  attendance_grade: number;
   period_status: string;
   logs: Record<number, string>;
 }
@@ -42,8 +45,8 @@ export interface PeriodsApiResponse {
   periods_metadata: Record<string, PeriodMetadata>;
   students: StudentReport[];
   policy_summary?: {
-      consecutive_limit: number;
-      passing_threshold: number;
+    consecutive_limit: number;
+    passing_threshold: number;
   };
 }
 
@@ -83,7 +86,10 @@ const getStatusBadge = (status: string) => {
   }
 
   return (
-    <div className={`w-6 h-6 flex items-center justify-center rounded text-[11px] font-bold shadow-sm ${classes}`} title={s}>
+    <div
+      className={`w-6 h-6 flex items-center justify-center rounded text-[11px] font-bold shadow-sm ${classes}`}
+      title={s}
+    >
       {label}
     </div>
   );
@@ -101,7 +107,10 @@ const DropdownFilter: React.FC<{
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -117,17 +126,42 @@ const DropdownFilter: React.FC<{
         className="inline-flex justify-between items-center w-full min-h-[42px] rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-600"
       >
         <span className="truncate">{selected || `Select ${label}`}</span>
-        <svg className={`ml-2 h-5 w-5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+        <svg
+          className={`ml-2 h-5 w-5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z"
+            clipRule="evenodd"
+          />
         </svg>
       </button>
 
       {open && (
         <div className="origin-top-right absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
           <div className="py-1">
-            <button onClick={() => { setSelected(""); setOpen(false); }} className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${selected === "" ? "bg-gray-100 font-semibold" : ""}`}>All</button>
+            <button
+              onClick={() => {
+                setSelected("");
+                setOpen(false);
+              }}
+              className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${selected === "" ? "bg-gray-100 font-semibold" : ""}`}
+            >
+              All
+            </button>
             {options.map((option) => (
-              <button key={option} onClick={() => { setSelected(option); setOpen(false); }} className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${selected === option ? "bg-gray-100 font-semibold" : ""}`}>{option}</button>
+              <button
+                key={option}
+                onClick={() => {
+                  setSelected(option);
+                  setOpen(false);
+                }}
+                className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${selected === option ? "bg-gray-100 font-semibold" : ""}`}
+              >
+                {option}
+              </button>
             ))}
           </div>
         </div>
@@ -136,21 +170,30 @@ const DropdownFilter: React.FC<{
   );
 };
 
+// --- Main Component ---
 const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
   const [filterText, setFilterText] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+
+  const handleExport = () => {
+    if (!data || data.students.length === 0) {
+      toast.error("No data available to export");
+      return;
+    }
+    exportPeriodsToExcel(data, selectedPeriod);
+  };
 
   const filteredStudents = useMemo(() => {
     if (!data) return [];
     return data.students.filter(
       (student) =>
         student.name.toLowerCase().includes(filterText.toLowerCase()) ||
-        student.student_id.toLowerCase().includes(filterText.toLowerCase())
+        student.student_id.toLowerCase().includes(filterText.toLowerCase()),
     );
   }, [data, filterText]);
 
   const periodOptions = useMemo(() => {
-      return data ? Object.keys(data.periods_metadata) : [];
+    return data ? Object.keys(data.periods_metadata) : [];
   }, [data]);
 
   const columns = useMemo(() => {
@@ -161,29 +204,38 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
         name: "ID",
         selector: (row) => row.student_id,
         sortable: true,
-        width: "120px", 
+        width: "120px", // Keep fixed for sticky
         style: {
-             position: 'sticky', left: 0, zIndex: 1, backgroundColor: 'white', borderRight: '1px solid #e5e7eb'
-        }
+          position: "sticky",
+          left: 0,
+          zIndex: 1,
+          backgroundColor: "white",
+          borderRight: "1px solid #e5e7eb",
+        },
       },
       {
         name: "STUDENT NAME",
         selector: (row) => row.name,
         sortFunction: (a, b) => {
-            if (a.sex !== b.sex) return b.sex.localeCompare(a.sex);
-            return a.name.localeCompare(b.name);
+          if (a.sex !== b.sex) return b.sex.localeCompare(a.sex);
+          return a.name.localeCompare(b.name);
         },
         sortable: true,
-        width: "220px",
-        style: { 
-             fontWeight: "bold", color: "#374151", borderRight: "1px solid #e5e7eb",
-             position: 'sticky', left: '120px', zIndex: 1, backgroundColor: 'white'
+        width: "220px", // Keep fixed for sticky
+        style: {
+          fontWeight: "bold",
+          color: "#374151",
+          borderRight: "1px solid #e5e7eb",
+          position: "sticky",
+          left: "120px",
+          zIndex: 1,
+          backgroundColor: "white",
         },
         cell: (row) => (
-            <div className="flex flex-col py-1">
-                <span>{row.name}</span>
-            </div>
-        )
+          <div className="flex flex-col py-1">
+            <span>{row.name}</span>
+          </div>
+        ),
       },
     ];
 
@@ -196,70 +248,52 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
       const meta = data.periods_metadata[periodName];
       if (!meta.sessions) return;
 
+      // Session Columns (Keep small and fixed)
       meta.sessions.forEach((session) => {
         dynamicCols.push({
           name: (
             <div className="flex flex-col items-center py-1">
-              <span className="text-[10px] font-bold">{dayjs(session.date).format("MMM D")}</span>
-              <span className="text-[9px] opacity-75 uppercase">{(session.type || "GEN").substring(0, 3)}</span>
+              <span className="text-[10px] font-bold">
+                {dayjs(session.date).format("MMM D")}
+              </span>
+              <span className="text-[9px] opacity-75 uppercase">
+                {(session.type || "GEN").substring(0, 3)}
+              </span>
             </div>
           ),
           selector: (row) => row.periods[periodName]?.logs?.[session.id] || "",
-          cell: (row) => getStatusBadge(row.periods[periodName]?.logs?.[session.id]),
+          cell: (row) =>
+            getStatusBadge(row.periods[periodName]?.logs?.[session.id]),
           center: true,
           width: "55px",
-          style: { padding: '0 2px' }, 
+          style: { padding: "0 2px" },
         });
       });
 
+      // Period Grade Column (ALLOW GROW)
       dynamicCols.push({
         name: `${periodName}`,
         selector: (row) => row.periods[periodName]?.attendance_grade || 0,
         sortable: true,
         cell: (row) => {
-            const grade = row.periods[periodName]?.attendance_grade;
-            const meta = data.periods_metadata[periodName];
-            
-            if (meta.total_classes === 0) {
-                 return <span className="text-gray-300 text-xs">-</span>;
-            }
+          const grade = row.periods[periodName]?.attendance_grade;
+          const meta = data.periods_metadata[periodName];
 
-            return (
-                <span className="font-bold text-gray-800 text-xs bg-white px-2 py-1 rounded border border-gray-300">
-                    {Number(grade ?? 0).toFixed(2)}
-                </span>
-            );
+          if (meta.total_classes === 0) {
+            return <span className="text-gray-300 text-xs">-</span>;
+          }
+
+          return (
+            <span className="font-bold text-gray-800 text-xs bg-white px-2 py-1 rounded border border-gray-300">
+              {Number(grade ?? 0).toFixed(2)}
+            </span>
+          );
         },
         center: true,
-        width: "100px",
-        style: { borderLeft: "1px solid #e5e7eb", backgroundColor: "#f9fafb" },
-      });
-
-      dynamicCols.push({
-        name: "Status",
-        selector: (row) => row.periods[periodName]?.period_status || "-",
-        center: true,
-        grow: 1,
+        // CHANGED: Use minWidth and grow to fill free space
         minWidth: "100px",
-        style: { backgroundColor: "#f9fafb", borderRight: "1px solid #e5e7eb" },
-        cell: (row) => {
-            const status = row.periods[periodName]?.period_status;
-            if (!status || status === '') {
-                 return <span className="text-gray-300 font-bold">-</span>;
-            }
-
-            const isFailed = status?.includes("Failed") || status === 'Failed';
-            
-            if (isFailed) {
-                return (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-600 border border-red-200">
-                        {status}
-                    </span>
-                );
-            }
-            
-            return <span>{status}</span>;
-        }
+        grow: 1,
+        style: { borderLeft: "1px solid #e5e7eb", backgroundColor: "#f9fafb" },
       });
     });
 
@@ -269,41 +303,77 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
   const customStyles: TableStyles = {
     headCells: {
       style: {
-        fontSize: "12px", fontWeight: "800", padding: "10px 4px",
-        backgroundColor: "#2D336B", color: "white", justifyContent: "center",
+        fontSize: "12px",
+        fontWeight: "800",
+        padding: "10px 4px",
+        backgroundColor: "blue",
+        color: "white",
+        justifyContent: "center",
       },
     },
     cells: {
-      style: { fontSize: "12px", padding: "6px", borderRight: "1px dashed #f3f4f6" },
+      style: {
+        fontSize: "12px",
+        padding: "6px",
+        borderRight: "1px dashed #f3f4f6",
+      },
     },
     headRow: {
-      style: { borderTopLeftRadius: "8px", borderTopRightRadius: "8px", overflow: "hidden" },
+      style: {
+        borderTopLeftRadius: "8px",
+        borderTopRightRadius: "8px",
+        overflow: "hidden",
+      },
     },
     rows: {
-        style: { minHeight: '50px' }
-    }
+      style: { minHeight: "50px" },
+    },
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
+      {/* Container for Filters and Export */}
       <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-white rounded-md shadow-sm border border-gray-200">
+        {/* 1. Dropdown Filter */}
         <div className="min-h-[42px] w-48 flex-shrink-0">
-          <DropdownFilter label="Period" options={periodOptions} selected={selectedPeriod} setSelected={setSelectedPeriod} />
+          <DropdownFilter
+            label="Period"
+            options={periodOptions}
+            selected={selectedPeriod}
+            setSelected={setSelectedPeriod}
+          />
         </div>
+
+        {/* 2. Search Input */}
         <div className="flex-1 min-h-[42px]">
           <div className="relative flex items-center h-full">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input type="text" placeholder="Search student..." value={filterText} onChange={(e) => setFilterText(e.target.value)} className="w-full h-[42px] pl-10 pr-4 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm" />
+            <input
+              type="text"
+              placeholder="Search student..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              className="w-full h-[42px] pl-10 pr-4 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm"
+            />
           </div>
         </div>
+
+        {/* 3. Export Button */}
+        <button
+          onClick={handleExport}
+          disabled={!data || loading}
+          className="flex items-center justify-center gap-2 px-4 h-[42px] bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-md shadow transition-colors font-medium text-sm flex-shrink-0"
+        >
+          <FaFileExcel className="w-4 h-4" />
+          <span className="hidden sm:inline">Export</span>
+        </button>
       </div>
 
-      <div className="rounded-lg border border-gray-200 overflow-hidden shadow-sm bg-white">
+      <div className="rounded-lg border border-gray-200 overflow-hidden shadow-sm bg-white w-full">
         {loading ? (
-           // 2. Replaced Spinner with TableSkeleton Loop
           <div className="p-4">
             {[...Array(8)].map((_, i) => (
-               <TableSkeleton key={i} />
+              <TableSkeleton key={i} />
             ))}
           </div>
         ) : (
@@ -319,7 +389,11 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
             dense
             fixedHeader
             fixedHeaderScrollHeight="600px"
-            noDataComponent={<div className="py-8 text-center text-gray-500 bg-white">No data found.</div>}
+            noDataComponent={
+              <div className="py-8 text-center text-gray-500 bg-white">
+                No data found.
+              </div>
+            }
           />
         )}
       </div>

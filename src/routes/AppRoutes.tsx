@@ -32,6 +32,7 @@ import AttendanceSessionDetails from "../pages/AttendanceSessionDetails";
 import MySchedule from "../pages/mySchedule";
 import MySubjectDetails from "../pages/myScheduleDetails";
 import BulkAddStudents from "../components/bulkRegistration/BulkAddStudents";
+import BulkRemoveStudents from "../components/bulkRegistration/BulkRemoveStudents";
 import Rules from "../pages/myRules";
 import PolicyForm from "../components/manualRegistration/PolicyForm";
 //import AttendanceRecordDetails  from "../pages/AttendanceRecordDetails";
@@ -115,6 +116,10 @@ const AppRoutes = () => {
               path="/mySchedule/subjects/:id/bulk-add-students"
               element={<BulkAddStudents />}
             />
+            <Route 
+  path="/mySchedule/subjects/:id/bulk-remove-students" 
+  element={<BulkRemoveStudents />} 
+/>
             <Route path="/records" element={<Records />} />
             <Route
               path="/records/attendance/:courseId"
