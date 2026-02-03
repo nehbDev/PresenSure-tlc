@@ -17,7 +17,6 @@ const DAYS_OPTIONS = [
   { value: "Sat", label: "Saturday" },
 ];
 
-// UPDATE 1: Added hyphens here so the Lecture Dropdown shows "ComLab - A"
 const BUILDINGS_LECTURE: Record<string, string[]> = {
   RFL: ["1A", "2B", "3B", "3C", "3D", "AVR 1"],
   FJN: [
@@ -47,44 +46,42 @@ const toMinutes = (time: string) => {
   return hours * 60 + minutes;
 };
 
-// UPDATE 2: Simplified Format Logic
+// Formats string as "Building - Room"
 const formatRoomString = (schedule: { type: string; building: string; room: string }) => {
-  // Case 1: Laboratory (State is just "A") -> Add "ComLab - "
-  if (schedule.type === "Laboratory") return `ComLab - ${schedule.room}`;
-
-  // Case 2: Lecture in ComLab (State is already "ComLab - A")
-  // We just return it as is.
-  if (schedule.room && schedule.room.includes("ComLab")) {
-      return schedule.room;
+  // If Laboratory or building is ComLab
+  if (schedule.type === "Laboratory" || schedule.building === "ComLab") {
+    const cleanRoom = schedule.room.replace("ComLab - ", "").trim();
+    return `ComLab - ${cleanRoom}`;
+  }
+  
+  if (schedule.room.includes("ComLab")) {
+     return schedule.room;
   }
 
-  // Case 3: Standard Lecture (e.g. "FJN 101")
-  return `${schedule.building} ${schedule.room}`;
+  return `${schedule.building} - ${schedule.room}`;
 };
 
-// UPDATE 3: Simplified Parse Logic
+// Parses "Building - Room" into components
 const parseRoomString = (roomString: string, type: string) => {
     if (!roomString) return { building: "", room: "" };
     
-    // CASE 1: Laboratory (DB: "ComLab - A") -> UI State: "A"
     if (type === "Laboratory") {
-        if (roomString.includes("ComLab")) {
-             // Cleanly remove "ComLab - " to get "A"
-            const roomLetter = roomString.replace("ComLab - ", "").trim();
-            return { building: "FJN", room: roomLetter };
-        }
+        const roomLetter = roomString.replace("ComLab - ", "").trim();
+        return { building: "ComLab", room: roomLetter };
     }
 
-    // CASE 2: Lecture in ComLab (DB: "ComLab - A") -> UI State: "ComLab - A"
     if (roomString.startsWith("ComLab")) {
-        // Matches the value in BUILDINGS_LECTURE exactly
         return { building: "FJN", room: roomString };
     }
 
-    // CASE 3: Standard Lecture (DB: "FJN 101") -> UI State: building="FJN", room="101"
+    if (roomString.includes(" - ")) {
+        const [building, ...roomParts] = roomString.split(" - ");
+        return { building: building.trim(), room: roomParts.join(" - ").trim() };
+    }
+    
     const parts = roomString.split(' ');
     if (parts.length >= 2) {
-        return { building: parts[0], room: parts.slice(1).join(' ') };
+         return { building: parts[0], room: parts.slice(1).join(' ') };
     }
 
     return { building: "", room: roomString };
@@ -115,7 +112,6 @@ const parseDaysString = (daysStr: string) => {
 
 const DayMultiSelect: React.FC<{ value: string[]; onChange: (newDays: string[]) => void }> = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
-
   const toggleDay = (dayValue: string) => {
     if (value.includes(dayValue)) {
       onChange(value.filter((d) => d !== dayValue));
@@ -141,7 +137,6 @@ const DayMultiSelect: React.FC<{ value: string[]; onChange: (newDays: string[]) 
             ))
           : <span className="text-gray-400">Select Days</span>}
       </div>
-
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)}></div>
@@ -199,8 +194,7 @@ const Stepper = ({ step }: { step: number }) => {
   );
 };
 
-
-
+// --- Interfaces ---
 interface CourseData {
     course_id: number;
     subject_code: string;
@@ -229,13 +223,11 @@ const EditSchedule: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form State
   const [subject, setSubject] = useState({ subject_code: "", description: "", units: "" });
   const [instructorId, setInstructorId] = useState("");
   const [instructorName, setInstructorName] = useState("");
   const [schedules, setSchedules] = useState<any[]>([]);
 
-  // --- Fetch Data ---
   const { data: courseData, isLoading: isFetching } = useQuery({
     queryKey: ["course_details", id],
     queryFn: async () => {
@@ -247,7 +239,6 @@ const EditSchedule: React.FC = () => {
     retry: 1
   });
 
-  // --- Populate Form ---
   useEffect(() => {
     if (courseData) {
         let derivedUnits = "";
@@ -286,11 +277,9 @@ const EditSchedule: React.FC = () => {
     }
   }, [courseData]);
 
-  // --- Logic ---
   const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let newValue = value;
-
     if (name === "units") {
       const num = value.replace(/\D/g, "");
       newValue = num === "" ? "" : Math.min(3, parseInt(num)).toString();
@@ -301,17 +290,28 @@ const EditSchedule: React.FC = () => {
   const handleScheduleChange = (index: number, field: string, value: any) => {
     const updated = [...schedules];
     const item = { ...updated[index], [field]: value };
-    updated[index] = item;
+    
+    // UPDATE: Handle Type Change
+    if (field === "type") {
+        if (value === "Laboratory") {
+            item.building = "ComLab"; // Auto-set for Lab
+            item.room = ""; // Reset room
+        } else {
+            item.building = ""; // Reset for Lecture
+            item.room = "";
+        }
+    }
 
+    updated[index] = item;
+    
     if (field === "building") {
-      item.room = "";
+        item.room = "";
     }
 
     if ((field === "start_time" || field === "days") && subject.units) {
       const units = parseInt(subject.units);
       const daysCount = field === "days" ? value.length : item.days.length;
       const startTime = field === "start_time" ? value : item.start_time;
-
       if (startTime && daysCount > 0) {
         item.end_time = calculateEndTime(startTime, units, daysCount);
       }
@@ -332,19 +332,15 @@ const EditSchedule: React.FC = () => {
   const hasConflict = useCallback((labStart: string, labEnd: string, labDays: string[]) => {
     const lec = schedules[0];
     if (!lec || !lec.start_time || !lec.end_time) return false;
-    
     const commonDays = labDays.filter(d => lec.days.includes(d));
     if (commonDays.length === 0) return false;
-
     const lStart = toMinutes(labStart);
     const lEnd = toMinutes(labEnd);
     const lecStart = toMinutes(lec.start_time);
     const lecEnd = toMinutes(lec.end_time);
-
     return lStart < lecEnd && lEnd > lecStart;
   }, [schedules]);
 
-  // --- Validations ---
   const validateStep1 = () => {
     if (!subject.subject_code || !subject.description || !subject.units) {
       toast.error("Please fill all subject fields.");
@@ -405,24 +401,16 @@ const EditSchedule: React.FC = () => {
       
       await queryClient.invalidateQueries({ queryKey: ["course_details", id] });
       await queryClient.invalidateQueries({ queryKey: ["courses_active_semester"] });
-
       toast.success("Schedule updated successfully!");
-      
-      setTimeout(() => {
-        navigate(`/schedules/schedule-details?id=${id}`);
-      }, 500);
-
+      setTimeout(() => navigate(`/schedules/schedule-details?id=${id}`), 500);
     } catch (error: any) {
-      console.error(error);
       toast.error(error?.response?.data?.message || "Failed to update schedule.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isFetching) {
-      return <div className="p-8 text-center text-gray-500">Loading schedule details...</div>;
-  }
+  if (isFetching) return <div className="p-8 text-center text-gray-500">Loading schedule details...</div>;
 
   return (
     <div className="space-y-4">
@@ -432,12 +420,9 @@ const EditSchedule: React.FC = () => {
           { label: "Course Details", to: `/schedules/schedule-details?id=${id}` }, 
           { label: "Edit Schedule" }
       ]} />
-      
       <Stepper step={step} />
 
       <div className="bg-white rounded-lg shadow-lg p-6 space-y-6 ">
-        
-        {/* STEP 1: SUBJECT INFO */}
         {step === 1 && (
           <div className="space-y-6">
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -465,44 +450,49 @@ const EditSchedule: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 2: SCHEDULE DETAILS */}
         {step === 2 && (
           <div className="space-y-6">
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
               <div className="bg-blue-600 px-4 py-3 shadow rounded-t-lg flex justify-between items-center">
                 <h4 className="font-semibold text-white">Schedule Details</h4>
                 {schedules.length < 2 && (
-                  <button onClick={addLabManually} className="text-xs bg-white text-blue-600 px-3 py-1 rounded font-bold hover:bg-blue-50">
-                    + Add Lab
-                  </button>
+                  <button onClick={addLabManually} className="text-xs bg-white text-blue-600 px-3 py-1 rounded font-bold hover:bg-blue-50">+ Add Lab</button>
                 )}
               </div>
               <div className="p-4 space-y-6">
                 {schedules.map((sch, index) => {
                   const isLab = sch.type === "Laboratory";
                   const conflict = isLab && hasConflict(sch.start_time, sch.end_time, sch.days);
-
                   return (
                     <div key={index} className="border border-gray-200 rounded-lg p-4 shadow-sm relative">
-                      {isLab && (
-                        <button onClick={removeLab} className="absolute top-4 right-4 text-gray-400 hover:text-red-500"><FaTrash /></button>
-                      )}
                       
-                      <div className="flex items-center gap-2 mb-4">
-                        <h5 className="font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-md inline-block">
-                          {sch.type} Schedule
-                        </h5>
+                      {/* Header with Type Selector and Delete Button */}
+                      <div className="flex items-center justify-between mb-4">
+                         <div className="flex items-center gap-2">
+                             <span className="text-sm font-bold text-gray-700">Type:</span>
+                             <select 
+                                value={sch.type}
+                                onChange={(e) => handleScheduleChange(index, "type", e.target.value)}
+                                className="bg-blue-50 border border-blue-200 text-blue-700 text-sm font-semibold rounded-md px-3 py-1 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                             >
+                                 <option value="Lecture">Lecture</option>
+                                 <option value="Laboratory">Laboratory</option>
+                             </select>
+                         </div>
+                         {/* Only allow deleting if it is not the primary schedule (index > 0) */}
+                         {index > 0 && (
+                             <button onClick={removeLab} className="text-gray-400 hover:text-red-500 transition-colors" title="Remove Schedule">
+                                <FaTrash />
+                             </button>
+                         )}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Days */}
                         <div>
                           <label className="text-sm font-medium text-gray-700 block mb-1">Days <span className="text-red-500">*</span></label>
                           <DayMultiSelect value={sch.days} onChange={(v) => handleScheduleChange(index, "days", v)} />
                           {conflict && <p className="text-xs text-red-500 mt-1">Time conflict with Lecture!</p>}
                         </div>
-
-                        {/* Time */}
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-sm font-medium text-gray-700 block mb-1">Start <span className="text-red-500">*</span></label>
@@ -514,8 +504,6 @@ const EditSchedule: React.FC = () => {
                             <input type="time" value={sch.end_time} readOnly className="w-full h-[42px] border px-3 rounded-md bg-gray-100 text-gray-500 cursor-not-allowed" />
                           </div>
                         </div>
-
-                        {/* Building */}
                         {!isLab && (
                           <div>
                             <label className="text-sm font-medium text-gray-700 block mb-1">Building <span className="text-red-500">*</span></label>
@@ -526,17 +514,12 @@ const EditSchedule: React.FC = () => {
                             </select>
                           </div>
                         )}
-
-                        {/* Room */}
                         <div>
-                          <label className="text-sm font-medium text-gray-700 block mb-1">
-                            Room {isLab ? "(ComLab)" : ""} <span className="text-red-500">*</span>
-                          </label>
+                          <label className="text-sm font-medium text-gray-700 block mb-1">Room {isLab ? "(ComLab)" : ""} <span className="text-red-500">*</span></label>
                           {isLab ? (
                             <select value={sch.room} onChange={(e) => handleScheduleChange(index, "room", e.target.value)}
                               className="w-full h-[42px] border px-3 rounded-md outline-none focus:ring-2 focus:ring-blue-600">
                               <option value="">Select Room</option>
-                              {/* UPDATE 4: Visual Hyphen added here */}
                               {COMLAB_ROOMS.map(r => <option key={r} value={r}>ComLab - {r}</option>)}
                             </select>
                           ) : (
@@ -544,9 +527,10 @@ const EditSchedule: React.FC = () => {
                               disabled={!sch.building}
                               className="w-full h-[42px] border px-3 rounded-md outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-gray-100">
                               <option value="">Select Room</option>
-                              {sch.building && BUILDINGS_LECTURE[sch.building]?.map(r => (
-                                <option key={r} value={r}>{r}</option>
-                              ))}
+                              {sch.building && BUILDINGS_LECTURE[sch.building]?.map(r => {
+                                const displayRoom = r.includes("ComLab") ? r : `${sch.building} - ${r}`;
+                                return <option key={r} value={r}>{displayRoom}</option>;
+                              })}
                             </select>
                           )}
                         </div>
@@ -563,7 +547,6 @@ const EditSchedule: React.FC = () => {
           </div>
         )}
 
-        {/* STEP 3: INSTRUCTOR */}
         {step === 3 && (
           <div className="space-y-6">
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -575,23 +558,16 @@ const EditSchedule: React.FC = () => {
                   <label className="text-sm font-medium text-gray-700 block mb-1">Instructor ID <span className="text-red-500">*</span></label>
                   <input type="text" value={instructorId} onChange={(e) => setInstructorId(e.target.value)} placeholder="Enter Instructor ID" className="w-full h-[42px] border px-3 rounded-md outline-none focus:ring-2 focus:ring-blue-600" />
                 </div>
-                {instructorName && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-800 text-sm font-medium">
-                    Found: {instructorName}
-                  </div>
-                )}
+                {instructorName && <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-800 text-sm font-medium">Found: {instructorName}</div>}
               </div>
             </div>
             <div className="flex justify-between pt-4">
               <button onClick={() => setStep(2)} className="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600">Back</button>
-              <button onClick={checkInstructor} disabled={isLoading} className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50">
-                {isLoading ? "Checking..." : "Next"}
-              </button>
+              <button onClick={checkInstructor} disabled={isLoading} className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50">{isLoading ? "Checking..." : "Next"}</button>
             </div>
           </div>
         )}
 
-        {/* STEP 4: REVIEW */}
         {step === 4 && (
           <div className="space-y-6">
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -619,13 +595,10 @@ const EditSchedule: React.FC = () => {
             </div>
             <div className="flex justify-between pt-4">
               <button onClick={() => setStep(3)} className="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600">Back</button>
-              <button onClick={handleUpdate} disabled={isSubmitting} className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:opacity-50">
-                {isSubmitting ? "Updating..." : "Confirm & Update"}
-              </button>
+              <button onClick={handleUpdate} disabled={isSubmitting} className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:opacity-50">{isSubmitting ? "Updating..." : "Confirm & Update"}</button>
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

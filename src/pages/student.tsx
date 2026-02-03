@@ -25,7 +25,7 @@ const programsByDepartment = {
     "BSBA-OM",
     "BSEntrep",
   ],
-  "College of Teacher Education": ["BEEd", "BSed-English", "BSed-Mathematics"],
+  "College of Teacher Education": ["BEED", "BSed-English", "BSed-Mathematics"],
   "College of Computer Studies": ["BSIT", "ACT"],
 };
 

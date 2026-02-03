@@ -22,7 +22,7 @@ const BUILDINGS_LECTURE: Record<string, string[]> = {
     "102", "103", "104", "202", "203", "204", "205", "206", "207",
     "ComLab - A", "ComLab - B", "ComLab - C" 
   ],
-  RLO: ["201", "202", "203"],
+  RLO: ["201", "202", "301"],
 };
 
 const COMLAB_ROOMS = ["A", "B", "C"];
@@ -49,20 +49,22 @@ const toMinutes = (time: string) => {
   return hours * 60 + minutes;
 };
 
-// Helper to format room string for display and saving
+// UPDATE: Formats string as "Building - Room" (hyphenated)
 const formatRoomString = (schedule: { type: string; building: string; room: string }) => {
-  // If Laboratory, format as "ComLab - A"
+  // If explicitly Laboratory type
   if (schedule.type === "Laboratory") {
-    return `ComLab - ${schedule.room}`;
+    // Check if "ComLab - " prefix already exists to avoid double prefixing
+    const cleanRoom = schedule.room.replace("ComLab - ", "").trim();
+    return `ComLab - ${cleanRoom}`;
   }
   
-  // If Lecture AND Room includes "ComLab", return ONLY the room (e.g. "ComLab A")
-  if (schedule.room && schedule.room.includes("ComLab")) {
-    return schedule.room;
+  // If Lecture held in ComLab
+  if (schedule.room.includes("ComLab")) {
+     return schedule.room; // Already formatted as "ComLab - A" in the constant
   }
 
-  // Default Lecture format: "Building Room" (e.g. "FJN 101")
-  return `${schedule.building} ${schedule.room}`;
+  // Standard Lecture: Ensure "Building - Room" format
+  return `${schedule.building} - ${schedule.room}`;
 };
 
 // --- Components ---
@@ -299,7 +301,6 @@ const AddSchedule: React.FC = () => {
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
-      // FIX 1: Apply formatRoomString to determine what gets saved
       const formattedSchedules = schedules.map((s) => ({
         ...s,
         room: formatRoomString(s)
@@ -439,9 +440,11 @@ const AddSchedule: React.FC = () => {
                               disabled={!sch.building}
                               className="w-full h-[42px] border px-3 rounded-md outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-gray-100">
                               <option value="">Select Room</option>
-                              {sch.building && BUILDINGS_LECTURE[sch.building]?.map(r => (
-                                <option key={r} value={r}>{r}</option>
-                              ))}
+                              {sch.building && BUILDINGS_LECTURE[sch.building]?.map(r => {
+                                // If it's already "ComLab - A", don't double prefix
+                                const displayRoom = r.includes("ComLab") ? r : `${sch.building} - ${r}`;
+                                return <option key={r} value={r}>{displayRoom}</option>;
+                              })}
                             </select>
                           )}
                         </div>
@@ -506,7 +509,7 @@ const AddSchedule: React.FC = () => {
                     <div key={i} className="flex justify-between bg-gray-50 p-3 rounded border border-gray-200 text-sm">
                       <span className="font-bold text-blue-700">{s.type}</span>
                       <span>{s.days.join(", ")} | {s.start_time}-{s.end_time}</span>
-                      {/* FIX 2: Apply formatRoomString to display in Review Step */}
+                      {/* Formatted display e.g. "RFL - 1A" or "ComLab - A" */}
                       <span className="text-gray-600">{formatRoomString(s)}</span>
                     </div>
                   ))}
