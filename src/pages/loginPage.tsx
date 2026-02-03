@@ -6,9 +6,9 @@ import {
   FaEye,
   FaEyeSlash,
   FaMobileAlt,
+  FaDownload,
 } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
-//import logo from "../assets/icon_nobg.webp";
 import apiService from "../services/ApiService";
 import { useNavigate } from "react-router-dom";
 
@@ -71,7 +71,7 @@ const LoginPage: React.FC = () => {
         toast.error(combinedMessage, {
           style: {
             whiteSpace: "pre-line",
-            maxWidth: "90vw", // Responsive toast width
+            maxWidth: "90vw",
             width: "fit-content",
             minWidth: "200px",
           },
@@ -87,7 +87,8 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-t from-blue-500 to-blue-200 p-4 sm:p-6 lg:p-8">
+    // Added 'relative' to the container so the absolute button positions correctly
+    <div className="min-h-screen relative flex flex-col items-center justify-center bg-gradient-to-t from-blue-500 to-blue-200 p-4 sm:p-6 lg:p-8">
       <Toaster
         position="top-center"
         toastOptions={{
@@ -102,12 +103,24 @@ const LoginPage: React.FC = () => {
         }}
       />
 
-      {/* Header Section: Scaled for mobile */}
+      {/* ✅ NEW LOCATION: Top Right Download Button */}
+      <a
+        href="https://github.com/nehbDev/PresenSure-tlc/releases/download/v1.0/PresenSure.apk"
+        target="_blank"
+        rel="noopener noreferrer"
+className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg-blue-700 text-white hover:bg-white hover:text-blue-700 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 z-50 group border border-white/20"      >
+        <FaMobileAlt className="h-4 w-4" />
+        <span className="text-xs font-bold tracking-wide hidden sm:inline">Download App</span>
+        <span className="text-xs font-bold tracking-wide sm:hidden">Download App</span>
+        <FaDownload className="h-3 w-3 ml-1 opacity-50 group-hover:opacity-100 transition-opacity" />
+      </a>
+
+      {/* Header Section */}
       <div className="w-full max-w-sm flex flex-col items-center mb-6 sm:mb-8">
         <img
-          src="/logo.webp" // ✅ Points directly to public folder
+          src="/logo.webp"
           alt="PresenSure Logo"
-          width="112" // ✅ Explicit width/height prevents layout shifts (CLS)
+          width="112"
           height="112"
           className="h-20 w-20 sm:h-28 sm:w-28 mb-4 transition-all"
         />
@@ -202,40 +215,12 @@ const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* --- Mobile App Link Section --- */}
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <div className="flex flex-col items-center text-center">
-              <a
-                /* KEY FIX: 
-                   1. Removed the leading "/" to make it an absolute external URL.
-                   2. Changed "file/d/.../view" to "uc?export=download&id=..."
-                      This forces the browser to download the file instead of opening 
-                      the Google Drive preview player.
-                */
-                href="https://github.com/nehbDev/PresenSure-tlc/releases/download/v1.0/PresenSure.apk"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-3 bg-blue-50 hover:bg-blue-100 px-4 py-3 rounded-xl transition-all w-full justify-center cursor-pointer"
-              >
-                <div className="bg-blue-600 text-white p-1.5 rounded-lg group-hover:scale-110 transition-transform">
-                  <FaMobileAlt className="h-4 w-4" />
-                </div>
-                <div className="text-left">
-                  <p className="text-xs font-bold text-blue-900 leading-none">
-                    Download App
-                  </p>
-                  <p className="text-[10px] text-blue-600 mt-1">
-                    Direct APK Download
-                  </p>
-                </div>
-              </a>
-            </div>
-          </div>
+          
+          {/* REMOVED: Old Download App Section */}
         </div>
       </div>
 
-      {/* Footer credit or version (optional) */}
+      {/* Footer credit */}
       <p className="mt-8 text-blue-800/60 text-[10px] font-medium uppercase tracking-widest">
         © 2026 PresenSure
       </p>
