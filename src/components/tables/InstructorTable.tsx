@@ -42,7 +42,7 @@ const InstructorTable: React.FC<Props> = ({ instructors, loading }) => {
           />
         ),
       center: true,
-      width: "80px",
+      width: "81px",
     },
     {
       name: "INSTRUCTOR ID",
