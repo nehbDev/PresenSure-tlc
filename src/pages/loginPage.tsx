@@ -8,7 +8,7 @@ import {
   FaMobileAlt,
 } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
-import logo from "../assets/icon_nobg.webp";
+//import logo from "../assets/icon_nobg.webp";
 import apiService from "../services/ApiService";
 import { useNavigate } from "react-router-dom";
 
@@ -105,8 +105,10 @@ const LoginPage: React.FC = () => {
       {/* Header Section: Scaled for mobile */}
       <div className="w-full max-w-sm flex flex-col items-center mb-6 sm:mb-8">
         <img
-          src={logo}
+          src="/logo.webp" // ✅ Points directly to public folder
           alt="PresenSure Logo"
+          width="112" // ✅ Explicit width/height prevents layout shifts (CLS)
+          height="112"
           className="h-20 w-20 sm:h-28 sm:w-28 mb-4 transition-all"
         />
         <h1 className="text-3xl sm:text-4xl font-bold text-blue-700 tracking-tight">
