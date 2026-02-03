@@ -23,7 +23,7 @@ const BUILDINGS_LECTURE: Record<string, string[]> = {
     "102", "103", "104", "202", "203", "204", "205", "206", "207",
     "ComLab - A", "ComLab - B", "ComLab - C" 
   ],
-  RLO: ["201", "202", "203"],
+  RLO: ["201", "202", "301"],
 };
 
 const COMLAB_ROOMS = ["A", "B", "C"];
