@@ -26,6 +26,34 @@ const InstructorManualRegister: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+
+    // --- 1. Instructor ID Formatting Logic ---
+    if (name === "user_id") {
+      // Remove non-numeric characters
+      const numbersOnly = value.replace(/[^0-9]/g, "");
+      
+      // Limit to 8 digits max (to allow formats 0000-000 or 0000-0000)
+      const truncated = numbersOnly.slice(0, 8);
+
+      let formattedId = "";
+      if (truncated.length > 0) {
+        formattedId = truncated.substring(0, 4);
+        if (truncated.length > 4) {
+          formattedId += "-" + truncated.substring(4);
+        }
+      }
+
+      setForm((prev) => ({ ...prev, [name]: formattedId }));
+      return;
+    }
+
+    // --- 2. Middle Initial Formatting (Force Uppercase & Limit) ---
+    if (name === "middle_initial") {
+      setForm((prev) => ({ ...prev, [name]: value.toUpperCase().slice(0, 1) }));
+      return;
+    }
+
+    // --- 3. Standard Handling ---
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -39,7 +67,6 @@ const InstructorManualRegister: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Validation - same pattern as student form
     const requiredFields = [
       { name: "user_id", label: "Instructor ID" },
       { name: "firstname", label: "First Name" },
@@ -93,30 +120,7 @@ const InstructorManualRegister: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <Toaster
-        position="top-center"
-        containerClassName="mt-10"
-        toastOptions={{
-          success: {
-            style: {
-              background: "#f0fdf4",
-              color: "#166534",
-            },
-          },
-          error: {
-            style: {
-              background: "#fef2f2",
-              color: "#991b1b",
-            },
-          },
-          style: {
-            maxWidth: "400px",
-            minWidth: "300px",
-            whiteSpace: "pre-wrap",
-            wordWrap: "break-word",
-          },
-        }}
-      />
+      <Toaster position="top-center" containerClassName="mt-10" />
       <Breadcrumbs
         crumbs={[
           { label: "Instructors", to: "/instructors" },
@@ -181,6 +185,7 @@ const InstructorManualRegister: React.FC = () => {
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
+                  {/* Instructor ID */}
                   <div>
                     <label className="text-sm font-medium text-gray-700 block mb-1">
                       Instructor ID <span className="text-red-500">*</span>
@@ -190,45 +195,61 @@ const InstructorManualRegister: React.FC = () => {
                       name="user_id"
                       value={form.user_id}
                       onChange={handleChange}
+                      maxLength={9} // 4 digits + 1 dash + 4 digits
+                      placeholder="0000-0000"
                       className="w-full h-[42px] border border-gray-300 px-3 py-2 rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
                     />
                   </div>
+
+                  {/* First Name */}
                   <div>
                     <label className="text-sm font-medium text-gray-700 block mb-1">
                       First Name <span className="text-red-500">*</span>
+                      <span className="text-xs text-gray-400 ml-1 font-normal">(Max 12)</span>
                     </label>
                     <input
                       type="text"
                       name="firstname"
                       value={form.firstname}
                       onChange={handleChange}
+                      maxLength={12}
                       className="w-full h-[42px] border border-gray-300 px-3 py-2 rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
                     />
                   </div>
+
+                  {/* Middle Initial */}
                   <div>
                     <label className="text-sm font-medium text-gray-700 block mb-1">
                       Middle Initial
+                      <span className="text-xs text-gray-400 ml-1 font-normal">(Max 1)</span>
                     </label>
                     <input
                       type="text"
                       name="middle_initial"
                       value={form.middle_initial}
                       onChange={handleChange}
+                      maxLength={1}
                       className="w-full h-[42px] border border-gray-300 px-3 py-2 rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
                     />
                   </div>
+
+                  {/* Last Name */}
                   <div>
                     <label className="text-sm font-medium text-gray-700 block mb-1">
                       Last Name <span className="text-red-500">*</span>
+                      <span className="text-xs text-gray-400 ml-1 font-normal">(Max 12)</span>
                     </label>
                     <input
                       type="text"
                       name="lastname"
                       value={form.lastname}
                       onChange={handleChange}
+                      maxLength={12}
                       className="w-full h-[42px] border border-gray-300 px-3 py-2 rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
                     />
                   </div>
+
+                  {/* Sex */}
                   <div className="col-span-2">
                     <label className="text-sm font-medium text-gray-700 block mb-1">
                       Sex <span className="text-red-500">*</span>

@@ -253,7 +253,7 @@ const Student: React.FC = () => {
     setProgramFilter("");
   }, [departmentFilter]);
 
-  const yearOptions: string[] = Array.from(
+  let yearOptions: string[] = Array.from(
     new Set(students.map((s) => s.year_level).filter((v): v is string => !!v))
   ).sort((a, b) => {
     const ixA = yearOrder.indexOf(a);
@@ -263,6 +263,13 @@ const Student: React.FC = () => {
     if (ixB !== -1) return 1;
     return a.localeCompare(b);
   });
+
+  // ✅ NEW: Apply constraint if Program is "ACT"
+  if (programFilter === "ACT") {
+    yearOptions = yearOptions.filter((y) => 
+      ["First Year", "Second Year"].includes(y)
+    );
+  }
 
   const blockRaw: string[] = Array.from(
     new Set(students.map((s) => s.block).filter((v): v is string => !!v))
@@ -314,14 +321,14 @@ const Student: React.FC = () => {
         />
         <Card
           icon={<FaUserCheck className="text-blue-600 text-4xl" />}
-          label="Registered Students"
+          label="Enrolled Students"
           value={registeredCount.toString()}
           colorClass="border-blue-600"
           loading={loading}
         />
         <Card
           icon={<FaUserTimes className="text-blue-600 text-4xl" />}
-          label="Unregistered Students"
+          label="Unenrolled Students"
           value={unregisteredCount.toString()}
           colorClass="border-blue-600"
           loading={loading}
@@ -342,7 +349,7 @@ const Student: React.FC = () => {
               }`}
               style={{ minHeight: 38 }}
             >
-              {tab === "enrolled" ? "Registered" : "Unregistered"}
+              {tab === "enrolled" ? "Enrolled" : "Unenrolled"}
             </button>
           ))}
         </div>

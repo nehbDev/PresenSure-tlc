@@ -17,7 +17,6 @@ interface OldStudentResponse {
     program?: string;
     year?: string;
     block?: string;
-    // Matches your Laravel relationship structure
     profile?: {
       image_link: string;
     };
@@ -35,7 +34,6 @@ const StudentManualRegister: React.FC = () => {
   const [type, setType] = useState<"old" | "new" | "">("");
   const [file, setFile] = useState<File | null>(null);
   
-  // 1. STATE: Store the existing image link from the database
   const [existingProfileImage, setExistingProfileImage] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -69,13 +67,42 @@ const StudentManualRegister: React.FC = () => {
 
   const yearWords = ["First", "Second", "Third", "Fourth"];
 
-  // --- Field Config ---
+  // --- Field Config with Max Lengths ---
   const fields = [
-    { label: "Student Number", name: "userId", required: true, as: "input", type: "text" },
-    { label: "First Name", name: "firstName", required: true, as: "input", type: "text" },
-    { label: "Middle Initial", name: "middleInitial", as: "input", type: "text" },
-    { label: "Last Name", name: "lastName", required: true, as: "input", type: "text" },
-    { label: "Suffix", name: "suffix", as: "input", type: "text" },
+    { 
+      label: "Student Number", 
+      name: "userId", 
+      required: true, 
+      as: "input", 
+      type: "text", 
+      // C (1) + - (1) + 4 digits + - (1) + 4 digits = 11 chars total
+      maxLength: 11, 
+      placeholder: "C-0000-0000" 
+    },
+    { 
+      label: "First Name", 
+      name: "firstName", 
+      required: true, 
+      as: "input", 
+      type: "text", 
+      maxLength: 12 // Requested Limit
+    },
+    { 
+      label: "Middle Initial", 
+      name: "middleInitial", 
+      as: "input", 
+      type: "text", 
+      maxLength: 1 // Requested Limit
+    },
+    { 
+      label: "Last Name", 
+      name: "lastName", 
+      required: true, 
+      as: "input", 
+      type: "text", 
+      maxLength: 12 // Requested Limit
+    },
+    { label: "Suffix", name: "suffix", as: "input", type: "text", maxLength: 5 },
     {
       label: "Sex", name: "sex", required: true, as: "select",
       options: [{ value: "Male", label: "Male" }, { value: "Female", label: "Female" }],
@@ -111,7 +138,39 @@ const StudentManualRegister: React.FC = () => {
   // --- Handlers ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    // --- 1. Student ID Formatting Logic ---
+    if (name === "userId") {
+      // Remove any character that is NOT a number
+      const numbersOnly = value.replace(/[^0-9]/g, "");
+      
+      // Limit to 8 digits max (since format is C-xxxx-xxxx)
+      const truncated = numbersOnly.slice(0, 8);
+
+      let formattedId = "";
+      
+      // If user has typed numbers, format them
+      if (truncated.length > 0) {
+        formattedId = "C-" + truncated.substring(0, 4);
+        if (truncated.length > 4) {
+          formattedId += "-" + truncated.substring(4);
+        }
+      } 
+      // If empty (user backspaced everything), leave empty
+      
+      setForm((prev) => ({ ...prev, [name]: formattedId }));
+      return;
+    }
+
+    // --- 2. Middle Initial Formatting (Force Uppercase) ---
+    if (name === "middleInitial") {
+      setForm((prev) => ({ ...prev, [name]: value.toUpperCase() }));
+      return;
+    }
+
+    // --- 3. Standard Handling ---
     setForm((prev) => ({ ...prev, [name]: value }));
+    
     if (name === "department") setForm((prev) => ({ ...prev, program: "" }));
   };
 
@@ -132,7 +191,6 @@ const StudentManualRegister: React.FC = () => {
 
       const data = res.data.student;
 
-      // 2. LOGIC: Capture existing profile image if available
       if (data.profile?.image_link) {
         setExistingProfileImage(data.profile.image_link);
       } else {
@@ -202,7 +260,7 @@ const StudentManualRegister: React.FC = () => {
         sex: "", department: "", program: "", year: "", block: "",
       });
       setFile(null);
-      setExistingProfileImage(null); // Reset image state
+      setExistingProfileImage(null);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Registration failed.");
     }
@@ -243,13 +301,17 @@ const StudentManualRegister: React.FC = () => {
       value: form[field.name as keyof typeof form],
       onChange: handleChange,
       disabled: (field.disabled || (field.name === "program" && !form.department)) && !(type === "old" && field.name === "userId"),
-      className: "w-full h-[42px] border border-gray-300 px-3 py-2 rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+      className: "w-full h-[42px] border border-gray-300 px-3 py-2 rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition",
+      maxLength: field.maxLength, // ✅ Apply Max Length here
+      placeholder: field.placeholder, // ✅ Apply Placeholder if exists
     };
 
     return (
       <div key={field.name}>
         <label className="text-sm font-medium text-gray-700 block mb-1">
           {field.label} {field.required && <span className="text-red-500 ml-1">*</span>}
+          {/* Optional: Show character count hint */}
+
         </label>
         {field.as === "input" ? (
           <input type={field.type || "text"} {...commonProps} disabled={type === "old" && field.name !== "userId"} autoComplete="off" />
@@ -325,7 +387,6 @@ const StudentManualRegister: React.FC = () => {
                 <div className="p-4">
                   <div className="flex flex-col items-center gap-4 mb-4 pb-4 border-b border-gray-200">
                     <label htmlFor="profileImage" className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-full cursor-pointer hover:border-blue-500 transition bg-gray-50 overflow-hidden">
-                      {/* IMAGE PRIORITY LOGIC */}
                       {file ? (
                         <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover rounded-full" />
                       ) : existingProfileImage ? (
@@ -379,7 +440,6 @@ const StudentManualRegister: React.FC = () => {
                   <div className="flex gap-4">
                     <div className="flex-shrink-0 text-center">
                       <div className="w-24 h-24 rounded-full border-2 border-blue-300 overflow-hidden flex items-center justify-center bg-white shadow-sm mx-auto mb-2">
-                        {/* IMAGE PRIORITY LOGIC */}
                         {file ? (
                           <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover" />
                         ) : existingProfileImage ? (

@@ -1,25 +1,40 @@
-import React, { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiService from "../../services/ApiService";
 import { toast } from "react-hot-toast";
 
-interface PolicyFormData {
-  late_threshold_minutes: number | string;
-  absent_threshold_minutes: number | string;
-  lates_to_absent?: number | string;
-  consecutive_absents_to_fail?: number | string;
-  attendance_weight?: number | string;
+// --- Types ---
+interface Course {
+  course_id: number;
+  subject_code: string;
+  description: string;
 }
 
-interface AttendancePolicyModalProps {
+interface PolicyData {
+  attendance_policy_id?: number;
+  policy_name: string;
+  is_default: boolean;
+  calculation_type: "accumulation" | "deduction";
+  late_threshold_minutes: number | string;
+  absent_threshold_minutes: number | string;
+  lates_to_absent: number | string;
+  consecutive_absents_to_fail: number | string;
+  attendance_weight: number | string;
+  base_score: number | string;
+  absent_penalty: number | string;
+  late_penalty: number | string;
+  course_ids: number[];
+  courses?: Course[];
+}
+
+interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onSave?: () => void;
   forceCreate?: boolean;
 }
 
-const AttendancePolicyModal: React.FC<AttendancePolicyModalProps> = ({
+const AttendancePolicyModal: React.FC<Props> = ({
   isOpen,
   onClose,
   onSave,
@@ -27,431 +42,478 @@ const AttendancePolicyModal: React.FC<AttendancePolicyModalProps> = ({
 }) => {
   const queryClient = useQueryClient();
 
-  // Form State
-  const [formData, setFormData] = useState<PolicyFormData>({
+  // --- Auth Helpers ---
+  const getAuthConfig = () => {
+    const token = localStorage.getItem("token");
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  const getUser = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+  const currentUser = getUser();
+
+  // --- State ---
+  const [viewMode, setViewMode] = useState<"list" | "form">(
+    forceCreate ? "form" : "list"
+  );
+
+  useEffect(() => {
+    if (forceCreate) setViewMode("form");
+  }, [forceCreate]);
+
+  const defaultForm: PolicyData = {
+    policy_name: "",
+    is_default: false,
+    calculation_type: "accumulation",
     late_threshold_minutes: 15,
     absent_threshold_minutes: 60,
     lates_to_absent: 3,
     consecutive_absents_to_fail: 5,
     attendance_weight: 10,
-  });
-
-  // UI State
-  const [hasExistingPolicy, setHasExistingPolicy] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-
-  const token = localStorage.getItem("token");
-  const config = {
-    headers: { Authorization: `Bearer ${token}` },
+    base_score: 100,
+    absent_penalty: 5,
+    late_penalty: 2.5,
+    course_ids: [],
   };
 
-  // 1. FETCH DATA
-  const {
-    data: policyData,
-    isLoading: isFetchLoading,
-    isSuccess,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["attendancePolicy", "my"],
+  const [formData, setFormData] = useState<PolicyData>(defaultForm);
+
+  // ✅ HELPER: Handles number input changes with strict digit limits
+  const handleNumberChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: keyof PolicyData,
+    maxLength: number
+  ) => {
+    const value = e.target.value;
+    // Only update if value is empty OR within the character limit
+    if (value === "" || value.length <= maxLength) {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+  };
+
+  // ✅ HELPER: Blocks invalid characters like 'e', '+', '-'
+  const blockInvalidChar = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (["e", "E", "+", "-"].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  // --- Queries ---
+  const { data: policies = [], isLoading: loadingPolicies } = useQuery({
+    queryKey: ["attendancePolicies"],
     queryFn: async () => {
-      const response = await apiService.get<{ data: any }>(
+      const res = await apiService.get<{ data: PolicyData[] }>(
         "/attendance-policy/my",
-        config
+        getAuthConfig()
       );
-      return response.data.data;
+      return res.data?.data || [];
     },
     enabled: isOpen,
-    retry: false,
   });
 
-  // 2. SYNC DATA TO FORM STATE
-  useEffect(() => {
-    if (isSuccess && policyData) {
-      setFormData(policyData);
-      setHasExistingPolicy(true);
-      setIsEditMode(false);
-    } else if (isError) {
-      const err = error as any;
-      if (err.response?.status === 404) {
-        setHasExistingPolicy(false);
-        setIsEditMode(true);
-      } else {
-        toast.error("Failed to load policy");
-      }
-    }
-  }, [isSuccess, policyData, isError, error]);
+  const { data: availableCourses = [] } = useQuery({
+    queryKey: ["myActiveCourses"],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      const userId = currentUser.user_id || currentUser.id;
+      const userRole = currentUser.role || "instructor";
+      if (!userId) return [];
 
-  // ✅ 3. FIX: IMPLEMENT THE MUTATION LOGIC HERE
+      try {
+        const res = await apiService.get<any>("/getCourses", {
+          ...getAuthConfig(),
+          params: { user_id: userId, role: userRole },
+        });
+        return res.data.my_records || [];
+      } catch (error: any) {
+        return [];
+      }
+    },
+    enabled: isOpen && viewMode === "form" && !!currentUser,
+  });
+
+  // --- Mutation ---
   const mutation = useMutation({
-    mutationFn: async (data: PolicyFormData) => {
-      return await apiService.post("/attendance-policy/my", data, config);
+    mutationFn: async (data: PolicyData) => {
+      return await apiService.post(
+        "/attendance-policy/my",
+        data,
+        getAuthConfig()
+      );
     },
     onSuccess: () => {
-      toast.success(
-        hasExistingPolicy
-          ? "Policy updated successfully"
-          : "Policy created successfully"
-      );
-      setHasExistingPolicy(true);
-      setIsEditMode(false);
-      
-      // Invalidate query so data re-fetches next time
-      queryClient.invalidateQueries({ queryKey: ["attendancePolicy", "my"] });
-      
-      onSave(); // Call the parent onSave prop
-    },
-    onError: (error: any) => {
-      console.error("Save error:", error);
-      if (error.response && error.response.status === 422) {
-        const responseData = error.response.data;
-        if (responseData.errors) {
-          const firstField = Object.keys(responseData.errors)[0];
-          const firstErrorMessage = responseData.errors[firstField][0];
-          toast.error(firstErrorMessage);
-        } else {
-          toast.error(responseData.message || "Validation failed.");
-        }
+      toast.success("Policy saved successfully!");
+      queryClient.invalidateQueries({ queryKey: ["attendancePolicies"] });
+
+      if (forceCreate && onSave) {
+        onSave();
       } else {
-        toast.error(error.response?.data?.message || "Failed to save policy");
+        setViewMode("list");
+      }
+    },
+    onError: (err: any) => {
+      if (err.response?.data?.errors) {
+        const firstErrorKey = Object.keys(err.response.data.errors)[0];
+        toast.error(err.response.data.errors[firstErrorKey][0]);
+      } else {
+        toast.error(err.response?.data?.message || "Failed to save policy");
       }
     },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const newValue = value === "" ? "" : parseInt(value);
-    setFormData((prev) => ({ ...prev, [name]: newValue }));
+  // --- Handlers ---
+  const handleCreateNew = () => {
+    setFormData(defaultForm);
+    setViewMode("form");
   };
 
-  const validateForm = () => {
-    const late = Number(formData.late_threshold_minutes);
-    const absent = Number(formData.absent_threshold_minutes);
-    const weight = Number(formData.attendance_weight);
-    const latesToAbsent = Number(formData.lates_to_absent);
-
-    if (formData.late_threshold_minutes === "") {
-      toast.error("Late Threshold required");
-      return false;
-    }
-    if (formData.absent_threshold_minutes === "") {
-      toast.error("Absent Threshold required");
-      return false;
-    }
-    if (formData.attendance_weight === "") {
-      toast.error("Attendance Weight required");
-      return false;
-    }
-
-    if (absent > 0 && late >= absent) {
-      toast.error("Late threshold must be strictly less than Absent.");
-      return false;
-    }
-    if (weight < 0 || weight > 30) {
-      toast.error("Weight must be 0-30%.");
-      return false;
-    }
-    if (formData.lates_to_absent !== "" && latesToAbsent < 2) {
-      toast.error("Lates to Absent must be at least 2.");
-      return false;
-    }
-    if (late < 0 || absent < 0) {
-      toast.error("No negative values.");
-      return false;
-    }
-
-    return true;
+  const handleEdit = (policy: PolicyData) => {
+    const existingIds = policy.courses?.map((c) => c.course_id) || [];
+    setFormData({ ...policy, course_ids: existingIds });
+    setViewMode("form");
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleCourseToggle = (courseId: number) => {
+    setFormData((prev) => {
+      const exists = prev.course_ids.includes(courseId);
+      return {
+        ...prev,
+        course_ids: exists
+          ? prev.course_ids.filter((id) => id !== courseId)
+          : [...prev.course_ids, courseId],
+      };
+    });
+  };
+
+  const handleDefaultChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    setFormData((prev) => ({
+      ...prev,
+      is_default: isChecked,
+      course_ids: isChecked ? [] : prev.course_ids,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    
-    // ✅ Use the mutation to save data
     mutation.mutate(formData);
   };
 
-  const handleCancelEdit = () => {
-    if (forceCreate && !hasExistingPolicy) return;
-
-    if (hasExistingPolicy) {
-      if (isEditMode) {
-        setIsEditMode(false);
-        if (policyData) setFormData(policyData);
-      } else {
-        onClose();
-      }
-    } else {
-      onClose();
-    }
+  const handleBackdropClick = () => {
+    if (!forceCreate) onClose();
   };
 
   if (!isOpen) return null;
 
-  if (isFetchLoading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[9999]">
-        <div className="bg-white p-6 rounded-2xl shadow-xl">
-          <div className="flex items-center space-x-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-600 font-medium">Loading policy...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const showForm = !hasExistingPolicy || isEditMode;
-  const isUpdating = hasExistingPolicy && isEditMode;
-
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300">
-      <div
-        className="absolute inset-0"
-        onClick={() => !forceCreate && onClose()}
-      />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="absolute inset-0" onClick={handleBackdropClick}></div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all z-10 relative border border-gray-100">
-        {forceCreate && !hasExistingPolicy && (
-          <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm font-medium flex items-center shadow-sm">
-            <span className="text-xl mr-3">⚠️</span>
-            <div>
-              <p className="font-bold">Action Required</p>
-              <p>
-                You must set an attendance policy before accessing the
-                dashboard.
-              </p>
-            </div>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative z-10">
+        
+        {/* Header */}
+        <div className="p-6 border-b flex justify-between items-center bg-gray-50">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-gray-800">
+              {forceCreate
+                ? "Welcome! Please Set Your Attendance Policy"
+                : viewMode === "list"
+                ? "Attendance Policies"
+                : formData.attendance_policy_id
+                ? "Edit Policy"
+                : "Create Policy"}
+            </h2>
+            {forceCreate && (
+              <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full border border-amber-200">
+                Action Required
+              </span>
+            )}
           </div>
-        )}
+          {!forceCreate && (
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+            >
+              &times;
+            </button>
+          )}
+        </div>
 
-        <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-300">
           
-          {showForm
-            ? isUpdating
-              ? "Edit Policy"
-              : "Set Attendance Policy"
-            : "Attendance Policy"}
-        </h2>
-
-        {!showForm ? (
-          // --- VIEW MODE ---
-          <div className="space-y-6">
-            <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
-              <h3 className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-wider">
-                Time Thresholds
-              </h3>
-              <div className="grid grid-cols-2 gap-8">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Late Threshold
-                  </label>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formData.late_threshold_minutes}{" "}
-                    <span className="text-sm text-gray-500 font-normal">
-                      mins
-                    </span>
-                  </p>
+          {/* LIST VIEW */}
+          {viewMode === "list" && !forceCreate && (
+            <div className="space-y-4">
+              {loadingPolicies ? (
+                <div className="flex justify-center p-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Absent Threshold
-                  </label>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formData.absent_threshold_minutes === 0
-                      ? "Disabled"
-                      : `${formData.absent_threshold_minutes}`}{" "}
-                    <span className="text-sm text-gray-500 font-normal">
-                      {formData.absent_threshold_minutes !== 0 && "mins"}
-                    </span>
-                  </p>
+              ) : (
+                <>
+                  {policies.length === 0 && (
+                    <div className="text-center py-10">
+                      <button
+                        onClick={handleCreateNew}
+                        className="text-blue-600 font-medium hover:underline"
+                      >
+                        Create your first one
+                      </button>
+                    </div>
+                  )}
+                  <div className="grid gap-4">
+                    {policies.map((policy: PolicyData) => (
+                      <div
+                        key={policy.attendance_policy_id}
+                        className="border border-gray-200 rounded-xl p-5 flex justify-between"
+                      >
+                        <div>
+                          <h3 className="font-bold">{policy.policy_name}</h3>
+                          {policy.is_default && (
+                             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Default</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleEdit(policy)}
+                          className="text-blue-600"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleCreateNew}
+                    className="w-full py-4 border-2 border-dashed mt-6"
+                  >
+                    + Create New Policy
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* FORM VIEW */}
+          {viewMode === "form" && (
+            <form onSubmit={handleSubmit} className="space-y-8">
+              
+              {/* --- General Settings --- */}
+              <section>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                      Policy Name <span className="text-gray-400 font-normal text-xs">(Max 10 chars)</span>
+                    </label>
+                    <input
+                      className="w-full border p-2.5 rounded-lg"
+                      value={formData.policy_name}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          policy_name: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., Strict"
+                      maxLength={10} 
+                      required
+                    />
+                    <div className="text-right text-xs text-gray-400 mt-1">
+                      {formData.policy_name.length}/10
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                      Calculation Type
+                    </label>
+                    <select
+                      className="w-full border p-2.5 rounded-lg bg-white"
+                      value={formData.calculation_type}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          calculation_type: e.target.value as any,
+                        })
+                      }
+                    >
+                      <option value="accumulation">Accumulation</option>
+                      <option value="deduction">Deduction</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end pb-1">
+                    <label
+                      className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg w-full border ${
+                        formData.is_default
+                          ? "bg-green-50 border-green-200"
+                          : "border-transparent"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={Boolean(formData.is_default)}
+                        onChange={handleDefaultChange}
+                        className="w-5 h-5 text-green-600"
+                      />
+                      <div>
+                        <span className="font-semibold block">
+                          Set as Default Policy
+                        </span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </section>
 
-            <div className="grid grid-cols-3 gap-4 px-2">
-              <div className="text-center p-3 bg-blue-50/50 rounded-lg">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
-                  Lates = 1 Absent
-                </label>
-                <p className="text-lg font-bold text-gray-800">
-                  {formData.lates_to_absent || "-"}
-                </p>
-              </div>
-              <div className="text-center p-3 bg-blue-50/50 rounded-lg">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
-                  Absents to Fail
-                </label>
-                <p className="text-lg font-bold text-gray-800">
-                  {formData.consecutive_absents_to_fail || "-"}
-                </p>
-              </div>
-              <div className="text-center p-3 bg-blue-50/50 rounded-lg border border-blue-100">
-                <label className="block text-xs font-medium text-blue-600 mb-1">
-                  Weight
-                </label>
-                <p className="text-lg font-bold text-blue-700">
-                  {formData.attendance_weight}%
-                </p>
-              </div>
-            </div>
+              {/* --- Grading Logic --- */}
+              <section className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                
+                {formData.calculation_type === 'deduction' ? (
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Base Score</label>
+                      <input 
+                        type="number" 
+                        value={formData.base_score} 
+                        onChange={(e) => handleNumberChange(e, 'base_score', 3)} 
+                        onKeyDown={blockInvalidChar}
+                        className="w-full border p-2 rounded-lg bg-white" 
+                        placeholder="100"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Absent Penalty (-)</label>
+                      <input 
+                        type="number" 
+                        value={formData.absent_penalty} 
+                        onChange={(e) => handleNumberChange(e, 'absent_penalty', 3)} 
+                        onKeyDown={blockInvalidChar}
+                        className="w-full border p-2 rounded-lg bg-white" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Late Penalty (-)</label>
+                      <input 
+                        type="number" 
+                        value={formData.late_penalty} 
+                        onChange={(e) => handleNumberChange(e, 'late_penalty', 3)} 
+                        onKeyDown={blockInvalidChar}
+                        className="w-full border p-2 rounded-lg bg-white" 
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 text-blue-800 text-sm p-4 rounded-lg mb-6 border border-blue-100 flex items-start gap-3">
+                    <div className="mt-0.5">ℹ️</div>
+                    <div>
+                      <strong>Accumulation Mode Active:</strong><br/>
+                      Students start at 0 and earn points per session.<br/>
+                      <span className="text-xs opacity-80 mt-1 block">Present = 1.0 &nbsp;|&nbsp; Late = 0.5 &nbsp;|&nbsp; Absent = 0</span>
+                    </div>
+                  </div>
+                )}
 
-            <div className="flex justify-end space-x-3 pt-6 border-t mt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditMode(true)}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium shadow-lg shadow-blue-200 transition-all active:scale-95"
-              >
-                Edit Policy
-              </button>
-            </div>
-          </div>
-        ) : (
-          // --- EDIT/CREATE MODE ---
-          <form onSubmit={handleSubmit} noValidate className="space-y-6">
-            <div className="bg-blue-50/60 p-5 rounded-xl border border-blue-100">
-              <h3 className="text-sm font-bold text-blue-900 mb-4 flex items-center">
-                <span className="w-1.5 h-4 bg-blue-500 rounded-full mr-2"></span>
-                Time Thresholds
-              </h3>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Late Threshold (mins){" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="late_threshold_minutes"
-                    value={formData.late_threshold_minutes}
-                    onChange={handleChange}
-                    className="w-full border border-gray-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
-                    min={0}
-                  />
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Before: Present. After: Late.
-                  </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase">
+                      Grade Weight (%)
+                    </label>
+                    <input
+                      type="number"
+                      max="30"
+                      value={formData.attendance_weight}
+                      onChange={(e) => handleNumberChange(e, 'attendance_weight', 3)}
+                      onKeyDown={blockInvalidChar}
+                      className="w-full border p-2 rounded-lg bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase">
+                      Late Threshold (mins)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.late_threshold_minutes}
+                      onChange={(e) => handleNumberChange(e, 'late_threshold_minutes', 3)}
+                      onKeyDown={blockInvalidChar}
+                      className="w-full border p-2 rounded-lg bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase">
+                      Absent Threshold (mins)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.absent_threshold_minutes}
+                      onChange={(e) => handleNumberChange(e, 'absent_threshold_minutes', 3)}
+                      onKeyDown={blockInvalidChar}
+                      className="w-full border p-2 rounded-lg bg-white"
+                    />
+                  </div>
                 </div>
+              </section>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Absent Threshold (mins){" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="absent_threshold_minutes"
-                    value={formData.absent_threshold_minutes}
-                    onChange={handleChange}
-                    className="w-full border border-gray-200 px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
-                    min={0}
-                  />
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Set to <strong>0</strong> to disable auto-absent.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Lates = 1 Absent
-                </label>
-                <input
-                  type="number"
-                  name="lates_to_absent"
-                  value={formData.lates_to_absent}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 px-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  min={2}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Absents to Fail
-                </label>
-                <input
-                  type="number"
-                  name="consecutive_absents_to_fail"
-                  value={formData.consecutive_absents_to_fail}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 px-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  min={1}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Weight (%) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="attendance_weight"
-                  value={formData.attendance_weight}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 px-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  min={0}
-                  max={30}
-                />
-                <p className="text-[10px] text-gray-400 mt-1 text-right">
-                  Max 30%
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-100">
-              {!(forceCreate && !hasExistingPolicy) && (
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors"
-                  disabled={mutation.isPending}
-                >
-                  {isEditMode && hasExistingPolicy ? "Cancel" : "Close"}
-                </button>
+              {/* --- Course Selection --- */}
+              {!formData.is_default ? (
+                <section>
+                  <div className="flex justify-between items-end mb-3">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase">
+                      Apply to Specific Courses *
+                    </h4>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50/50 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {Array.isArray(availableCourses) &&
+                      availableCourses.map((course: Course) => (
+                        <label
+                          key={course.course_id}
+                          className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
+                            formData.course_ids.includes(course.course_id)
+                              ? "bg-blue-50 border-blue-300 shadow-sm"
+                              : "bg-white border-gray-200 hover:border-blue-200"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.course_ids.includes(course.course_id)}
+                            onChange={() => handleCourseToggle(course.course_id)}
+                            className="w-4 h-4 text-blue-600 rounded mt-1 cursor-pointer"
+                          />
+                          <div className="text-sm">
+                            <div className="font-bold text-gray-800">{course.subject_code}</div>
+                            <div className="text-xs text-gray-500 truncate w-48" title={course.description}>{course.description}</div>
+                          </div>
+                        </label>
+                      ))}
+                    {availableCourses.length === 0 && (
+                      <div className="col-span-2 text-center py-6 text-gray-500">No courses found.</div>
+                    )}
+                  </div>
+                </section>
+              ) : (
+                <section className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+                  <h4 className="text-green-800 font-bold">Global Default Policy</h4>
+                  <p className="text-green-700 text-sm">Applies to all courses not explicitly assigned.</p>
+                </section>
               )}
 
-              <button
-                type="submit"
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100 flex items-center"
-                disabled={mutation.isPending}
-              >
-                {mutation.isPending && (
-                  <svg
-                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
+              {/* Actions Footer */}
+              <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+                {!forceCreate && (
+                  <button type="button" onClick={() => setViewMode("list")} className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium">Cancel</button>
                 )}
-                {isUpdating ? "Update Policy" : "Save & Continue"}
-              </button>
-            </div>
-          </form>
-        )}
+                <button type="submit" disabled={mutation.isPending} className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-70 flex items-center gap-2">
+                  {mutation.isPending ? "Saving..." : forceCreate ? "Save & Continue" : "Save Policy"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
