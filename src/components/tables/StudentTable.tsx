@@ -4,7 +4,8 @@ import type { TableColumn, TableStyles } from "react-data-table-component";
 import { FaAngleRight } from "react-icons/fa";
 import noProfile from "../../assets/noProfile.webp";
 import TableSkeleton from "../contentLoader/TableSkeleton";
-import { useNavigate } from "react-router-dom"; // 1. Import useNavigate
+import { useNavigate } from "react-router-dom";
+
 interface Student {
   user_id: string;
   firstname: string;
@@ -34,7 +35,7 @@ const CustomPagination = ({
   const totalPages = Math.ceil(rowCount / rowsPerPage);
 
   return (
-    <div className="flex items-center justify-between mt-3 px-2">
+    <div className="flex flex-wrap items-center justify-between mt-3 px-2 gap-2">
       <button
         onClick={() => onChangePage(currentPage - 1)}
         disabled={currentPage === 1}
@@ -43,7 +44,7 @@ const CustomPagination = ({
         Prev
       </button>
 
-      <span>
+      <span className="text-sm">
         Page {currentPage} of {totalPages}
       </span>
 
@@ -59,7 +60,8 @@ const CustomPagination = ({
 };
 
 const StudentTable: React.FC<Props> = ({ students, loading }) => {
-  const navigate = useNavigate(); // 2. Initialize Hook
+  const navigate = useNavigate();
+
   const columns: TableColumn<Student>[] = [
     {
       name: "PROFILE",
@@ -78,12 +80,13 @@ const StudentTable: React.FC<Props> = ({ students, loading }) => {
           />
         ),
       center: true,
-      width: "10%",
+      width: "80px", // Fixed width for image
+      minWidth: "80px",
     },
     {
       name: "STUDENT ID",
-      selector: (row) => row.user_id || "N/A", // Using user_id consistently
-      width: "20%",
+      selector: (row) => row.user_id || "N/A",
+      minWidth: "140px", // Force minimum width to prevent wrapping
       style: {
         textAlign: "left",
       },
@@ -97,7 +100,9 @@ const StudentTable: React.FC<Props> = ({ students, loading }) => {
       style: {
         textAlign: "left",
       },
-      width: "20%",
+      minWidth: "250px", // Wide minimum width ensures it takes space on mobile
+      grow: 2, // Takes up remaining space on Desktop
+      wrap: true, 
     },
     {
       name: "SEX",
@@ -105,7 +110,7 @@ const StudentTable: React.FC<Props> = ({ students, loading }) => {
       style: {
         textAlign: "left",
       },
-      width: "10%",
+      minWidth: "100px",
     },
     {
       name: "PROGRAM",
@@ -113,7 +118,7 @@ const StudentTable: React.FC<Props> = ({ students, loading }) => {
       style: {
         textAlign: "left",
       },
-      width: "10%",
+      minWidth: "100px",
     },
     {
       name: "YEAR LEVEL",
@@ -121,13 +126,13 @@ const StudentTable: React.FC<Props> = ({ students, loading }) => {
       style: {
         textAlign: "left",
       },
-      width: "10%",
+      minWidth: "120px",
     },
     {
       name: "BLOCK",
       selector: (row) => row.block || "N/A",
       center: true,
-      width: "10%",
+      minWidth: "80px",
     },
     {
       name: "ACTION",
@@ -135,7 +140,6 @@ const StudentTable: React.FC<Props> = ({ students, loading }) => {
         <button
           className="flex items-center justify-center bg-[#2D336B] text-white p-1.5 rounded-full hover:bg-[#4a5294] transition-colors shadow-sm"
           onClick={() => {
-            // Updated Navigation Logic
             navigate(`/students/student-details?id=${row.user_id}`);
           }}
           title="View Details"
@@ -146,7 +150,7 @@ const StudentTable: React.FC<Props> = ({ students, loading }) => {
       ignoreRowClick: true,
       allowOverflow: true,
       button: true,
-      width: "10%",
+      minWidth: "80px",
     },
   ];
 
@@ -178,7 +182,8 @@ const StudentTable: React.FC<Props> = ({ students, loading }) => {
   };
 
   return (
-    <div className="w-full bg-white p-4 rounded-md shadow-sm border border-gray-200">
+    // Added overflow-x-auto here to ensure the container allows scrolling
+    <div className="w-full bg-white p-4 rounded-md shadow-sm border border-gray-200 overflow-x-auto">
       {loading ? (
         <>
           {[...Array(5)].map((_, i) => (
@@ -196,6 +201,7 @@ const StudentTable: React.FC<Props> = ({ students, loading }) => {
           highlightOnHover
           striped
           dense
+          responsive // This enables the library's internal scroll wrapper
         />
       )}
     </div>

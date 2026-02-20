@@ -16,8 +16,7 @@ import Breadcrumbs from "../layout/Breadcrumbs";
 import CardSkeleton from "../components/contentLoader/CardSkeleton";
 import { useQuery } from "@tanstack/react-query";
 
-// ... [Keep your programsByDepartment, interfaces, and DropdownFilter exactly the same] ...
-// Organize programs by department
+// --- Configuration ---
 const programsByDepartment = {
   "College of Business Education": [
     "BSBA-MM",
@@ -31,7 +30,9 @@ const programsByDepartment = {
 
 const allDepartments = Object.keys(programsByDepartment);
 const allPrograms = Object.values(programsByDepartment).flat();
+const yearOrder = ["First Year", "Second Year", "Third Year", "Fourth Year"];
 
+// --- Interfaces ---
 interface Student {
   user_id: string;
   firstname: string;
@@ -62,15 +63,15 @@ interface ApiResponse {
   };
 }
 
-const yearOrder = ["First Year", "Second Year", "Third Year", "Fourth Year"];
+// --- Components ---
 
 const DropdownFilter: React.FC<{
   label: string;
   options: string[];
   selected: string;
   setSelected: (val: string) => void;
-  fixedWidth?: string;
-}> = ({ label, options, selected, setSelected, fixedWidth }) => {
+  minWidth?: string; 
+}> = ({ label, options, selected, setSelected, minWidth = "140px" }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -88,13 +89,15 @@ const DropdownFilter: React.FC<{
   }, []);
 
   return (
-    <div className="relative inline-block text-left" ref={containerRef}>
+    <div 
+      className="relative inline-block w-full sm:w-auto" 
+      ref={containerRef}
+      style={{ minWidth }} 
+    >
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className={`inline-flex items-center min-h-[42px] rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 whitespace-nowrap ${
-          fixedWidth ? fixedWidth : "min-w-[120px] max-w-[180px]"
-        }`}
+        className="inline-flex items-center justify-between h-[42px] w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
         aria-haspopup="true"
         aria-expanded={open}
       >
@@ -102,7 +105,7 @@ const DropdownFilter: React.FC<{
           {selected || `${label}`}
         </span>
         <svg
-          className="ml-2 h-5 w-5 text-gray-400 flex-shrink-0"
+          className="ml-2 h-4 w-4 text-gray-400 flex-shrink-0"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
@@ -115,17 +118,13 @@ const DropdownFilter: React.FC<{
           />
         </svg>
       </button>
+      
+      {/* Dropdown Menu - z-index ensures it sits on top */}
       {open && (
-        <div
-          className={`origin-top-right absolute z-20 mt-1 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none ${
-            fixedWidth ? fixedWidth : "min-w-[120px] max-w-[180px]"
-          }`}
-        >
+        <div className="origin-top-right absolute z-50 mt-1 w-full rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
           <ul
             className="py-1 text-sm text-gray-700 max-h-60 overflow-y-auto"
             role="menu"
-            aria-orientation="vertical"
-            aria-labelledby="options-menu"
           >
             <li
               className={`block px-4 py-2 cursor-pointer hover:bg-gray-100 ${
@@ -135,7 +134,6 @@ const DropdownFilter: React.FC<{
                 setSelected("");
                 setOpen(false);
               }}
-              role="menuitem"
             >
               All
             </li>
@@ -149,7 +147,6 @@ const DropdownFilter: React.FC<{
                   setSelected(option);
                   setOpen(false);
                 }}
-                role="menuitem"
               >
                 {option}
               </li>
@@ -160,6 +157,32 @@ const DropdownFilter: React.FC<{
     </div>
   );
 };
+
+const Card: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  colorClass: string;
+  loading?: boolean;
+}> = ({ icon, label, value, colorClass, loading }) => (
+  <div
+    className={`bg-white border-t-4 ${colorClass} shadow rounded-lg p-4 flex items-center space-x-3 min-w-[240px] flex-shrink-0 h-[100px]`}
+  >
+    {loading ? (
+      <div className="w-full">
+        <CardSkeleton />
+      </div>
+    ) : (
+      <>
+        {icon}
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        </div>
+      </>
+    )}
+  </div>
+);
 
 const Student: React.FC = () => {
   const [search, setSearch] = useState("");
@@ -173,52 +196,25 @@ const Student: React.FC = () => {
 
   const navigate = useNavigate();
   const userRole = localStorage.getItem("userRole") ?? "guest";
-
   const crumbs = [{ label: "Students" }];
   const location = useLocation();
   const successMessage = location.state?.successMessage;
   const hasShownToast = useRef(false);
 
-  // --- QUERY LOGIC WITH DEBUGGERS ---
   const {
     data: apiResponse,
     isLoading,
-    isFetching, // Tells us if a network request is flying right now
-    isStale,    // Tells us if the data is considered "old"
     isError,
     error,
   } = useQuery({
     queryKey: ["students"],
     queryFn: async () => {
-      // DEBUGGER 1: This logs ONLY when the API is actually hit
-      console.log(`%c[Network] Fetching fresh student data at ${new Date().toLocaleTimeString()}`, "color: #00ff00; font-weight: bold;");
-      
       const response = await apiService.get<ApiResponse>("/students");
       return response.data;
     },
-    staleTime: 1000 * 60 * 10, // 1 Minute for testing
+    staleTime: 1000 * 60 * 5,
     retry: 1,
   });
-
-  // DEBUGGER 2: Monitor fetching state (Start vs Finish)
-  useEffect(() => {
-    if (isFetching) {
-      console.log(`%c[Status] Background update STARTED...`, "color: orange");
-    } else if (!isLoading) {
-      console.log(`%c[Status] Background update FINISHED or Idle.`, "color: gray");
-    }
-  }, [isFetching, isLoading]);
-
-  // DEBUGGER 3: Monitor Expiration (When does data turn rotten?)
-  useEffect(() => {
-    if (isStale) {
-      console.log(`%c[Cache] Data is now STALE (Expired). Next window focus will trigger refetch.`, "color: red; font-weight: bold");
-    } else {
-      console.log(`%c[Cache] Data is FRESH. No refetch needed yet.`, "color: cyan");
-    }
-  }, [isStale]);
-
-  // --- END DEBUGGERS ---
 
   const students = apiResponse?.data || [];
   const loading = isLoading;
@@ -244,9 +240,7 @@ const Student: React.FC = () => {
   }, [successMessage]);
 
   const availablePrograms = departmentFilter
-    ? programsByDepartment[
-        departmentFilter as keyof typeof programsByDepartment
-      ] || []
+    ? programsByDepartment[departmentFilter as keyof typeof programsByDepartment] || []
     : allPrograms;
 
   useEffect(() => {
@@ -259,14 +253,11 @@ const Student: React.FC = () => {
     const ixA = yearOrder.indexOf(a);
     const ixB = yearOrder.indexOf(b);
     if (ixA !== -1 && ixB !== -1) return ixA - ixB;
-    if (ixA !== -1) return -1;
-    if (ixB !== -1) return 1;
     return a.localeCompare(b);
   });
 
-  // ✅ NEW: Apply constraint if Program is "ACT"
   if (programFilter === "ACT") {
-    yearOptions = yearOptions.filter((y) => 
+    yearOptions = yearOptions.filter((y) =>
       ["First Year", "Second Year"].includes(y)
     );
   }
@@ -301,189 +292,148 @@ const Student: React.FC = () => {
     return matchFilters && matchTab;
   });
 
-  const totalCount = counts.total_students;
-  const registeredCount = counts.registered_students;
-  const unregisteredCount = counts.unregistered_students;
-
   return (
     <div className="space-y-4">
       <Toaster position="top-center" />
       <Breadcrumbs crumbs={crumbs} />
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* 1. CARDS */}
+      <div className="flex flex-nowrap overflow-x-auto gap-4 pb-2 lg:grid lg:grid-cols-3 lg:overflow-visible custom-scrollbar">
         <Card
-          icon={<FaUsers className="text-blue-600 text-4xl" />}
+          icon={<FaUsers className="text-blue-600 text-3xl" />}
           label="Total Students"
-          value={totalCount.toString()}
+          value={counts.total_students.toString()}
           colorClass="border-blue-600"
           loading={loading}
         />
         <Card
-          icon={<FaUserCheck className="text-blue-600 text-4xl" />}
-          label="Enrolled Students"
-          value={registeredCount.toString()}
+          icon={<FaUserCheck className="text-blue-600 text-3xl" />}
+          label="Enrolled"
+          value={counts.registered_students.toString()}
           colorClass="border-blue-600"
           loading={loading}
         />
         <Card
-          icon={<FaUserTimes className="text-blue-600 text-4xl" />}
-          label="Unenrolled Students"
-          value={unregisteredCount.toString()}
+          icon={<FaUserTimes className="text-blue-600 text-3xl" />}
+          label="Unenrolled"
+          value={counts.unregistered_students.toString()}
           colorClass="border-blue-600"
           loading={loading}
         />
       </div>
 
-      {/* Tabs & action buttons */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-6 space-y-4 md:space-y-0">
-        <div className="flex space-x-6">
+      {/* 2. TABS & BUTTONS */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-6 gap-4">
+        {/* Tabs */}
+        <div className="flex space-x-6 border-b sm:border-none border-gray-200 overflow-x-auto">
           {(["enrolled", "not-enrolled"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-2 px-4 py-2 text-sm font-semibold cursor-pointer transition ${
+              className={`pb-2 px-2 sm:px-4 py-2 text-sm font-semibold cursor-pointer transition whitespace-nowrap ${
                 activeTab === tab
                   ? "border-b-2 border-blue-600 text-blue-600"
                   : "border-b-2 border-transparent text-gray-600 hover:text-blue-600"
               }`}
-              style={{ minHeight: 38 }}
             >
               {tab === "enrolled" ? "Enrolled" : "Unenrolled"}
             </button>
           ))}
         </div>
+
+        {/* Buttons */}
         {userRole !== "instructor" && (
-          <div className="flex justify-end items-center space-x-2">
+          <div className="flex flex-row gap-2 overflow-x-auto pb-1">
             <button
               onClick={() => navigate("/students/bulk-registration")}
-              className="flex items-center bg-blue-600 px-4 py-2 text-white text-sm rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
-              style={{ minHeight: 38 }}
+              className="flex items-center justify-center bg-blue-600 px-3 py-2 text-white text-sm rounded-md hover:bg-blue-500 transition whitespace-nowrap"
             >
-              <FaUsers className="mr-1 h-5 w-5" />
-              Bulk Registration
+              <FaUsers className="sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Bulk Registration</span>
             </button>
             <button
               onClick={() => navigate("/students/bulk-image-upload")}
-              className="flex items-center bg-blue-600 px-4 py-2 text-white text-sm rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
-              style={{ minHeight: 38 }}
+              className="flex items-center justify-center bg-blue-600 px-3 py-2 text-white text-sm rounded-md hover:bg-blue-500 transition whitespace-nowrap"
             >
-              <FaCloudUploadAlt className="mr-1 h-5 w-5" />
-              Upload Images
+              <FaCloudUploadAlt className="sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Upload Images</span>
             </button>
             <button
               onClick={() => navigate("/students/manual-registration")}
-              className="flex items-center bg-blue-600 px-4 py-2 text-white text-sm rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
-              style={{ minHeight: 38 }}
+              className="flex items-center justify-center bg-blue-600 px-3 py-2 text-white text-sm rounded-md hover:bg-blue-500 transition whitespace-nowrap"
             >
-              <FaUserPlus className="mr-1 h-5 w-5" />
-              Single Registration
+              <FaUserPlus className="sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Single Registration</span>
             </button>
-
             <button
               onClick={() => navigate("/students/archives")}
-              className="flex items-center bg-blue-600 px-4 py-2 text-white text-sm rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
-              style={{ minHeight: 38 }}
+              className="flex items-center justify-center bg-blue-600 px-3 py-2 text-white text-sm rounded-md hover:bg-blue-500 transition whitespace-nowrap"
             >
-              <FaArchive className="mr-1 h-5 w-5" />
-              View Archives
+              <FaArchive className="sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">View Archives</span>
             </button>
           </div>
         )}
       </div>
 
-      {/* Filter dropdowns & search */}
-      <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-md shadow-sm border border-gray-200">
-        {/* Department Filter */}
-        <div className="min-h-[42px] flex-shrink-0 w-64">
-          <DropdownFilter
-            label="Department"
-            options={allDepartments}
-            selected={departmentFilter}
-            setSelected={setDepartmentFilter}
-            fixedWidth="w-64"
-          />
-        </div>
-
-        {/* Program Filter */}
-        <div className="min-h-[42px] flex-shrink-0">
-          <DropdownFilter
-            label="Program"
-            options={availablePrograms}
-            selected={programFilter}
-            setSelected={setProgramFilter}
-          />
-        </div>
-
-        {/* Year Filter */}
-        <div className="min-h-[42px] flex-shrink-0">
-          <DropdownFilter
-            label="Year"
-            options={yearOptions}
-            selected={yearFilter}
-            setSelected={setYearFilter}
-          />
-        </div>
-
-        {/* Block Filter */}
-        <div className="min-h-[42px] flex-shrink-0">
-          <DropdownFilter
-            label="Block"
-            options={blockOptions}
-            selected={blockFilter}
-            setSelected={setBlockFilter}
-          />
-        </div>
-
-        {/* Search Input */}
-        <div className="flex-1 min-w-[200px] min-h-[42px]">
-          <div className="relative flex items-center h-full">
-            <label htmlFor="search" className="sr-only">
-              Search students
-            </label>
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input
-              id="search"
-              type="text"
-              placeholder="Search students..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-[42px] pl-10 pr-4 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+      {/* 3. FILTERS & SEARCH */}
+      <div className="bg-white p-4 rounded-md shadow-sm border border-gray-200">
+        <div className="flex flex-col lg:flex-row gap-4">
+          
+          {/* CHANGED: Removed overflow-x-auto.
+            Used flex-wrap. This allows dropdowns to "breathe" and sit on top of other content 
+            without getting clipped by a scroll container.
+          */}
+          <div className="flex flex-wrap gap-4 w-full lg:w-auto">
+            <DropdownFilter
+              label="Department"
+              options={allDepartments}
+              selected={departmentFilter}
+              setSelected={setDepartmentFilter}
+              minWidth="200px" 
             />
+            <DropdownFilter
+              label="Program"
+              options={availablePrograms}
+              selected={programFilter}
+              setSelected={setProgramFilter}
+              minWidth="140px"
+            />
+            <DropdownFilter
+              label="Year"
+              options={yearOptions}
+              selected={yearFilter}
+              setSelected={setYearFilter}
+              minWidth="120px"
+            />
+            <DropdownFilter
+              label="Block"
+              options={blockOptions}
+              selected={blockFilter}
+              setSelected={setBlockFilter}
+              minWidth="100px"
+            />
+          </div>
+
+          {/* Search Bar */}
+          <div className="w-full lg:flex-1 min-w-[200px]">
+            <div className="relative flex items-center h-[42px]">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search students..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-full pl-10 pr-4 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Student table */}
       <StudentTable students={filteredStudents} loading={loading} />
     </div>
   );
 };
-
-const Card: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  colorClass: string;
-  loading?: boolean;
-}> = ({ icon, label, value, colorClass, loading }) => (
-  <div
-    className={`bg-white border-t-4 ${colorClass} shadow rounded-lg p-6 flex items-center space-x-4 h-[106px]`}
-  >
-    {loading ? (
-      <div className="w-full">
-        <CardSkeleton />
-      </div>
-    ) : (
-      <>
-        {icon}
-        <div>
-          <p className="text-xs text-gray-500">{label}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
-        </div>
-      </>
-    )}
-  </div>
-);
 
 export default Student;

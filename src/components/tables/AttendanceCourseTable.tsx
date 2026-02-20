@@ -2,9 +2,8 @@ import React from "react";
 import DataTable from "react-data-table-component";
 import type { TableColumn, TableStyles } from "react-data-table-component";
 import { FaAngleRight } from "react-icons/fa";
-// 1. Import the Skeleton
 import TableSkeleton from "../contentLoader/TableSkeleton";
-// Define the interface
+
 export interface Course {
   id: number;
   course_code: string;
@@ -22,10 +21,10 @@ interface Props {
   loading: boolean;
   onViewAttendance: (courseId: number) => void;
   onTakeAttendance: (courseId: number) => void;
+  // ✅ Added optional prop with default
   showInstructor?: boolean;
 }
 
-// 2. Add the Custom Pagination Component (Same as StudentTable for consistency)
 const CustomPagination = ({
   currentPage,
   rowsPerPage,
@@ -63,6 +62,7 @@ const AttendanceCourseTable: React.FC<Props> = ({
   courses,
   loading,
   onViewAttendance,
+  // ✅ Destructure with default true
   showInstructor = true,
 }) => {
   const columns: TableColumn<Course>[] = [
@@ -89,6 +89,7 @@ const AttendanceCourseTable: React.FC<Props> = ({
       style: {
         textAlign: "left",
       },
+      // ✅ Use omit property to hide column based on prop
       omit: !showInstructor,
     },
     {
@@ -151,10 +152,8 @@ const AttendanceCourseTable: React.FC<Props> = ({
   };
 
   return (
-    // Updated container styles to match StudentTable (bg-white, padding, shadow)
     <div className="w-full bg-white p-4 rounded-md shadow-sm border border-gray-200">
       {loading ? (
-        // 3. Replaced simple text loading with TableSkeleton loop
         <>
           {[...Array(5)].map((_, i) => (
             <TableSkeleton key={i} />
@@ -167,7 +166,7 @@ const AttendanceCourseTable: React.FC<Props> = ({
           customStyles={customStyles}
           pagination
           paginationPerPage={10}
-          paginationComponent={CustomPagination} // 4. Applied Custom Pagination
+          paginationComponent={CustomPagination}
           highlightOnHover
           striped
           responsive

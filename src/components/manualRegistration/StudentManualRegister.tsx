@@ -75,7 +75,6 @@ const StudentManualRegister: React.FC = () => {
       required: true, 
       as: "input", 
       type: "text", 
-      // C (1) + - (1) + 4 digits + - (1) + 4 digits = 11 chars total
       maxLength: 11, 
       placeholder: "C-0000-0000" 
     },
@@ -85,14 +84,14 @@ const StudentManualRegister: React.FC = () => {
       required: true, 
       as: "input", 
       type: "text", 
-      maxLength: 12 // Requested Limit
+      maxLength: 12 
     },
     { 
       label: "Middle Initial", 
       name: "middleInitial", 
       as: "input", 
       type: "text", 
-      maxLength: 1 // Requested Limit
+      maxLength: 1 
     },
     { 
       label: "Last Name", 
@@ -100,7 +99,7 @@ const StudentManualRegister: React.FC = () => {
       required: true, 
       as: "input", 
       type: "text", 
-      maxLength: 12 // Requested Limit
+      maxLength: 12 
     },
     { label: "Suffix", name: "suffix", as: "input", type: "text", maxLength: 5 },
     {
@@ -139,38 +138,27 @@ const StudentManualRegister: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
-    // --- 1. Student ID Formatting Logic ---
     if (name === "userId") {
-      // Remove any character that is NOT a number
       const numbersOnly = value.replace(/[^0-9]/g, "");
-      
-      // Limit to 8 digits max (since format is C-xxxx-xxxx)
       const truncated = numbersOnly.slice(0, 8);
-
       let formattedId = "";
       
-      // If user has typed numbers, format them
       if (truncated.length > 0) {
         formattedId = "C-" + truncated.substring(0, 4);
         if (truncated.length > 4) {
           formattedId += "-" + truncated.substring(4);
         }
       } 
-      // If empty (user backspaced everything), leave empty
-      
       setForm((prev) => ({ ...prev, [name]: formattedId }));
       return;
     }
 
-    // --- 2. Middle Initial Formatting (Force Uppercase) ---
     if (name === "middleInitial") {
       setForm((prev) => ({ ...prev, [name]: value.toUpperCase() }));
       return;
     }
 
-    // --- 3. Standard Handling ---
     setForm((prev) => ({ ...prev, [name]: value }));
-    
     if (name === "department") setForm((prev) => ({ ...prev, program: "" }));
   };
 
@@ -190,12 +178,7 @@ const StudentManualRegister: React.FC = () => {
       }
 
       const data = res.data.student;
-
-      if (data.profile?.image_link) {
-        setExistingProfileImage(data.profile.image_link);
-      } else {
-        setExistingProfileImage(null);
-      }
+      setExistingProfileImage(data.profile?.image_link || null);
 
       setForm((prev) => ({
         ...prev,
@@ -270,8 +253,8 @@ const StudentManualRegister: React.FC = () => {
   const Stepper = () => {
     const steps = ["Student Type", "Student Info", "Review"];
     return (
-      <div className="flex justify-center mt-6 mb-8">
-        <div className="flex items-center w-full max-w-2xl">
+      <div className="flex justify-center mt-4 mb-6 md:mt-6 md:mb-8">
+        <div className="flex items-center w-full max-w-2xl px-2">
           {steps.map((label, index) => {
             const currentStep = index + 1;
             const isCompleted = step > currentStep;
@@ -279,13 +262,13 @@ const StudentManualRegister: React.FC = () => {
             return (
               <React.Fragment key={index}>
                 <div className="flex flex-col items-center flex-1">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition ${isActive || isCompleted ? "bg-blue-600 text-white shadow" : "bg-gray-300 text-gray-500"}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition text-sm ${isActive || isCompleted ? "bg-blue-600 text-white shadow" : "bg-gray-300 text-gray-500"}`}>
                     {currentStep}
                   </div>
-                  <p className="mt-2 text-sm text-center whitespace-nowrap">{label}</p>
+                  <p className="mt-2 text-xs sm:text-sm text-center whitespace-nowrap">{label}</p>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={`flex-1 h-1 mx-4 transition ${step > currentStep ? "bg-blue-600" : "bg-blue-300"}`} />
+                  <div className={`flex-1 h-1 mx-2 sm:mx-4 transition ${step > currentStep ? "bg-blue-600" : "bg-blue-300"}`} />
                 )}
               </React.Fragment>
             );
@@ -301,17 +284,15 @@ const StudentManualRegister: React.FC = () => {
       value: form[field.name as keyof typeof form],
       onChange: handleChange,
       disabled: (field.disabled || (field.name === "program" && !form.department)) && !(type === "old" && field.name === "userId"),
-      className: "w-full h-[42px] border border-gray-300 px-3 py-2 rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition",
-      maxLength: field.maxLength, // ✅ Apply Max Length here
-      placeholder: field.placeholder, // ✅ Apply Placeholder if exists
+      className: "w-full h-[42px] border border-gray-300 px-3 py-2 rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition text-sm",
+      maxLength: field.maxLength,
+      placeholder: field.placeholder,
     };
 
     return (
       <div key={field.name}>
         <label className="text-sm font-medium text-gray-700 block mb-1">
           {field.label} {field.required && <span className="text-red-500 ml-1">*</span>}
-          {/* Optional: Show character count hint */}
-
         </label>
         {field.as === "input" ? (
           <input type={field.type || "text"} {...commonProps} disabled={type === "old" && field.name !== "userId"} autoComplete="off" />
@@ -333,34 +314,40 @@ const StudentManualRegister: React.FC = () => {
       <Breadcrumbs crumbs={[{ label: "Students", to: "/students" }, { label: "Manual Registration" }]} />
       <Stepper />
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-6">
+      <div className="bg-white rounded-lg shadow p-4 md:p-6 space-y-6">
         {step === 1 && (
           <div className="space-y-6">
-            <div className="flex gap-6">
-              <div className="flex flex-col gap-2">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex flex-row md:flex-col gap-2 w-full md:w-auto">
                 <button
                   type="button"
-                  className={`px-4 py-2 text-sm rounded-md transition ${type === "old" ? "bg-blue-600 text-white shadow" : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-50"}`}
+                  className={`flex-1 md:flex-none px-4 py-2 text-sm rounded-md transition text-center ${type === "old" ? "bg-blue-600 text-white shadow" : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-50"}`}
                   onClick={() => { setType("old"); setForm(p => ({ ...p, userId: "" })); setExistingProfileImage(null); }}
                 >
                   Old Student
                 </button>
                 <button
                   type="button"
-                  className={`px-4 py-2 text-sm rounded-md transition ${type === "new" ? "bg-blue-600 text-white shadow" : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-50"}`}
+                  className={`flex-1 md:flex-none px-4 py-2 text-sm rounded-md transition text-center ${type === "new" ? "bg-blue-600 text-white shadow" : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-50"}`}
                   onClick={() => { setType("new"); setForm(p => ({ ...p, userId: "" })); setExistingProfileImage(null); }}
                 >
                   New Student
                 </button>
               </div>
-              {type === "old" && <div className="border-l border-gray-300 h-auto"></div>}
-              {type === "old" && <div className="flex-1">{renderField(fields[0])}</div>}
+              
+              {type === "old" && (
+                <>
+                  <div className="hidden md:block border-l border-gray-300 h-auto"></div>
+                  <div className="flex-1 w-full">{renderField(fields[0])}</div>
+                </>
+              )}
             </div>
+            
             <div className="flex justify-end">
               <button
                 type="button"
                 disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm rounded-md shadow focus:outline-none focus:ring-2 focus:ring-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 text-sm rounded-md shadow focus:outline-none focus:ring-2 focus:ring-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed"
                 onClick={async () => {
                   if (!type) return toast.error("Please select a student type.");
                   if (type === "old") {
@@ -382,33 +369,36 @@ const StudentManualRegister: React.FC = () => {
         {step === 2 && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Personal Info Card */}
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                 <div className="bg-blue-600 px-4 py-3"><h4 className="font-semibold text-white">Personal Information</h4></div>
                 <div className="p-4">
                   <div className="flex flex-col items-center gap-4 mb-4 pb-4 border-b border-gray-200">
-                    <label htmlFor="profileImage" className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-full cursor-pointer hover:border-blue-500 transition bg-gray-50 overflow-hidden">
+                    <label htmlFor="profileImage" className="flex flex-col items-center justify-center w-28 h-28 sm:w-32 sm:h-32 border-2 border-dashed border-gray-300 rounded-full cursor-pointer hover:border-blue-500 transition bg-gray-50 overflow-hidden">
                       {file ? (
                         <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover rounded-full" />
                       ) : existingProfileImage ? (
                         <img src={existingProfileImage} alt="Existing" className="w-full h-full object-cover rounded-full" />
                       ) : (
-                        <div className="flex flex-col items-center justify-center text-center"><p className="text-xs text-gray-500">Click or drag images</p></div>
+                        <div className="flex flex-col items-center justify-center text-center p-2"><p className="text-xs text-gray-500">Click to upload</p></div>
                       )}
                       <input id="profileImage" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                     </label>
-                    {file && <div className="flex items-center gap-2"><span className="text-sm text-gray-700 truncate max-w-[150px]">{file.name}</span><button type="button" className="text-red-500 hover:text-red-700 text-xs font-medium" onClick={() => setFile(null)}>Remove</button></div>}
+                    {file && <div className="flex items-center gap-2"><span className="text-xs sm:text-sm text-gray-700 truncate max-w-[150px]">{file.name}</span><button type="button" className="text-red-500 hover:text-red-700 text-xs font-medium" onClick={() => setFile(null)}>Remove</button></div>}
                   </div>
-                  <div className="grid grid-cols-2 gap-4">{fields.slice(0, 6).map(renderField)}</div>
+                  {/* Grid becomes 1 column on mobile, 2 columns on small tablets+ */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{fields.slice(0, 6).map(renderField)}</div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              {/* Academic Info Card */}
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden h-fit">
                 <div className="bg-blue-600 px-4 py-3"><h4 className="font-semibold text-white">Academic Information</h4></div>
-                <div className="p-4"><div className="grid grid-cols-1 gap-4">{fields.slice(6).map(renderField)}</div></div>
+                <div className="p-4"><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">{fields.slice(6).map(renderField)}</div></div>
               </div>
             </div>
 
-            <div className="flex justify-between pt-6 border-t border-gray-200">
+            <div className="flex justify-between pt-4 border-t border-gray-200">
               <button type="button" className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 text-sm rounded-md transition" onClick={() => setStep(1)}>Back</button>
               <button
                 type="button"
@@ -434,28 +424,35 @@ const StudentManualRegister: React.FC = () => {
         {step === 3 && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Review Personal Info */}
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                 <div className="bg-blue-600 px-4 py-3"><h4 className="font-semibold text-white">Personal Information</h4></div>
                 <div className="p-4">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 text-center">
+                  {/* Flex column on mobile, Row on tablet+ */}
+                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                    <div className="flex-shrink-0 text-center mx-auto sm:mx-0">
                       <div className="w-24 h-24 rounded-full border-2 border-blue-300 overflow-hidden flex items-center justify-center bg-white shadow-sm mx-auto mb-2">
                         {file ? (
                           <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover" />
                         ) : existingProfileImage ? (
                           <img src={existingProfileImage} alt="Existing" className="w-full h-full object-cover" />
                         ) : (
-                          <div className="flex flex-col items-center justify-center text-blue-400">
-                             <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
-                          </div>
+                          <div className="text-blue-400 text-xs">No Img</div>
                         )}
                       </div>
-                      <div className="text-center"><span className="text-xs font-medium text-gray-500 block">Student ID</span><span className="text-sm font-bold text-gray-600">{form.userId}</span></div>
+                      <div className="text-center">
+                        <span className="text-xs font-medium text-gray-500 block">Student ID</span>
+                        <span className="text-sm font-bold text-gray-600">{form.userId}</span>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <div className="grid grid-cols-2 gap-3">
+                    <div className="flex-1 w-full">
+                      {/* Grid 1 col on mobile, 2 col on tablet */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {fields.slice(1, 6).map(f => (
-                          <div key={f.name}><span className="text-xs font-medium text-gray-500 block">{f.label}</span><span className="text-sm text-gray-800 font-medium">{form[f.name as keyof typeof form] || "N/A"}</span></div>
+                          <div key={f.name} className="bg-gray-50 p-2 rounded">
+                            <span className="text-xs font-medium text-gray-500 block uppercase tracking-wide">{f.label}</span>
+                            <span className="text-sm text-gray-900 font-medium break-words">{form[f.name as keyof typeof form] || "N/A"}</span>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -463,23 +460,27 @@ const StudentManualRegister: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              {/* Review Academic Info */}
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden h-fit">
                 <div className="bg-blue-600 px-4 py-3"><h4 className="font-semibold text-white">Academic Information</h4></div>
                 <div className="p-4">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {fields.slice(6).map(f => (
-                      <div key={f.name}><span className="text-xs font-medium text-gray-500 block">{f.label}</span><span className="text-sm text-gray-800 font-medium">{form[f.name as keyof typeof form] || "N/A"}</span></div>
+                      <div key={f.name} className="bg-gray-50 p-2 rounded">
+                        <span className="text-xs font-medium text-gray-500 block uppercase tracking-wide">{f.label}</span>
+                        <span className="text-sm text-gray-900 font-medium break-words">{form[f.name as keyof typeof form] || "N/A"}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-between pt-6 border-t border-gray-200">
+            <div className="flex justify-between pt-4 border-t border-gray-200">
               <button type="button" className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 text-sm rounded-md transition" onClick={() => setStep(2)}>Back</button>
               <button
                 type="button"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 text-sm rounded-md transition disabled:bg-blue-300"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 text-sm rounded-md transition disabled:bg-blue-300 w-full sm:w-auto ml-2"
                 disabled={isSubmitting}
                 onClick={async () => {
                   setIsSubmitting(true);
@@ -487,7 +488,7 @@ const StudentManualRegister: React.FC = () => {
                   setIsSubmitting(false);
                 }}
               >
-                {isSubmitting ? "Processing..." : "Confirm & Register Student"}
+                {isSubmitting ? "Processing..." : "Confirm & Register"}
               </button>
             </div>
           </div>

@@ -75,7 +75,7 @@ const ImportTabs: React.FC<ImportTabsProps> = ({
             onClick={onSave}
             className="bg-blue-600 hover:bg-blue-500 px-4 py-2 text-white rounded-md font-medium text-sm disabled:bg-blue-300 disabled:cursor-not-allowed"
           >
-            {isSaving ? "Saving..." : "Save"}
+            {isSaving ? "Uploading..." : "Upload"}
           </button>
         </div>
       )}

@@ -7,12 +7,9 @@ interface TableSkeletonProps {
   style?: React.CSSProperties;
 }
 
-/**
- * Simple single-line rectangular row skeleton for tables.
- */
 const TableSkeleton: React.FC<TableSkeletonProps> = ({
   width = "100%",
-  height = 40,
+  height = 50,
   style,
 }) => {
   return (
@@ -20,14 +17,14 @@ const TableSkeleton: React.FC<TableSkeletonProps> = ({
       speed={2}
       width={width}
       height={height}
-      viewBox={`0 0 800 ${height}`}
+      // Using a percentage-based viewBox allows it to scale responsively
+      viewBox="0 0 100% 50"
       backgroundColor="#f3f3f3"
       foregroundColor="#ecebeb"
-      style={{ marginBottom: 10, width, ...style }}
+      style={{ marginBottom: 10, width: "100%", ...style }}
       preserveAspectRatio="none"
     >
-      {/* One big rectangle for the full row width */}
-      <rect x="0" y="0" rx="4" ry="4" width="800" height={height} />
+      <rect x="0" y="0" rx="4" ry="4" width="100%" height={height} />
     </ContentLoader>
   );
 };

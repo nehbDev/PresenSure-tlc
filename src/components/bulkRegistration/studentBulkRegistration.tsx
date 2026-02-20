@@ -4,8 +4,10 @@ import Breadcrumbs from "../../layout/Breadcrumbs";
 import FileUploader from "../fileUploaders/studentFileUploader";
 import ImportTabs from "../tabs/studentbulkRegistrationTabs";
 import apiService from "../../services/ApiService";
+// 1. Import useQueryClient
+import { useQueryClient } from "@tanstack/react-query"; 
 
-// --- 1. Corrected Interface to match Backend Response ---
+// --- Interfaces ---
 interface StudentData {
   id: string;
   firstname: string;
@@ -13,9 +15,9 @@ interface StudentData {
   lastname: string;
   suffix?: string;
   sex: string;
-  program: string;    // Changed from 'course' to match Backend
+  program: string;    
   year_level: string; 
-  block: string;      // Changed from 'section' to match Backend
+  block: string;      
   [key: string]: any;
 }
 
@@ -42,6 +44,9 @@ const StudentBulkRegistration: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
+  // 2. Initialize Query Client
+  const queryClient = useQueryClient();
+
   const [importedData, setImportedData] = useState<ImportUsersApiData>({
     to_enroll: [],
     already_enrolled: [],
@@ -92,7 +97,6 @@ const StudentBulkRegistration: React.FC = () => {
       }
     } catch (error: any) {
       const message = error.response?.data?.error || error.response?.data?.message || "Upload failed.";
-      // Check if it's a format error (e.g., missing columns)
       if (typeof message === 'string' && message.includes("Invalid file format")) {
          toast.error(message, { duration: 5000 });
       } else {
@@ -124,15 +128,18 @@ const StudentBulkRegistration: React.FC = () => {
 
       if (inserted > 0) {
         toast.success(`Successfully enrolled ${inserted} out of ${total} students!`);
-        // Clear the list after success
+        
+        // 3. Invalidate the students query
+        // This forces the "Student List" page to re-fetch data next time it is viewed.
+        await queryClient.invalidateQueries({ queryKey: ["students"] });
+
         setImportedData({ to_enroll: [], already_enrolled: [] });
       } else {
         toast.success("Process complete, but no new students were enrolled (duplicates skipped).");
       }
 
-      // Show warnings if any specific rows failed
       if (response.data.errors && response.data.errors.length > 0) {
-          toast.error(`Some rows failed: \n${response.data.errors.slice(0, 3).join('\n')}...`);
+        toast.error(`Some rows failed: \n${response.data.errors.slice(0, 3).join('\n')}...`);
       }
 
     } catch (error: any) {
@@ -150,17 +157,9 @@ const StudentBulkRegistration: React.FC = () => {
         position="top-center"
         containerClassName="mt-10 text-lg"
         toastOptions={{
-          success: {
-            style: { background: "#f0fdf4", color: "#166534" },
-          },
-          error: {
-            style: { background: "#fef2f2", color: "#991b1b" },
-          },
-          style: {
-            maxWidth: "500px",
-            whiteSpace: "pre-wrap",
-            wordWrap: "break-word",
-          },
+          success: { style: { background: "#f0fdf4", color: "#166534" } },
+          error: { style: { background: "#fef2f2", color: "#991b1b" } },
+          style: { maxWidth: "500px", whiteSpace: "pre-wrap", wordWrap: "break-word" },
         }}
       />
       

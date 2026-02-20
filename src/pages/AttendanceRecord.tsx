@@ -8,7 +8,6 @@ import AttendanceCourseTable, {
 } from "../components/tables/AttendanceCourseTable";
 import apiService from "../services/ApiService";
 import CardSkeleton from "../components/contentLoader/CardSkeleton";
-// 1. Import useQuery
 import { useQuery } from "@tanstack/react-query";
 
 // --- INTERFACES ---
@@ -291,6 +290,8 @@ const AttendanceRecord: React.FC = () => {
         loading={loading}
         onViewAttendance={handleViewAttendance}
         onTakeAttendance={handleTakeAttendance}
+        // ✅ PASS showInstructor PROP HERE
+        showInstructor={activeTab === "all"} 
       />
     </div>
   );

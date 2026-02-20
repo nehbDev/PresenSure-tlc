@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
-import { FaCloudUploadAlt, FaSpinner } from "react-icons/fa"; // Added FaSpinner
+import { FaCloudUploadAlt, FaSpinner } from "react-icons/fa"; 
+// 1. Import createPortal
+import { createPortal } from "react-dom";
 import apiService from "../../services/ApiService";
 import Breadcrumbs from "../../layout/Breadcrumbs";
 import UploadResultsModal, { type BulkUploadResponse } from "../modals/UploadResultsModal";
@@ -22,8 +24,6 @@ const BulkImageUpload: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
-  // ... (Your existing useEffects and helper functions remain unchanged)
-  
   const crumbs = [
     {
       label: pageType === "student" ? "Students" : "Instructors",
@@ -39,7 +39,6 @@ const BulkImageUpload: React.FC = () => {
     setShowModal(false);
   }, [location.pathname]);
 
-  // ... (Keep your drag-and-drop logic here) ...
   useEffect(() => {
     const onDragOver = (e: DragEvent) => {
       e.preventDefault();
@@ -72,9 +71,7 @@ const BulkImageUpload: React.FC = () => {
         drop.removeEventListener("drop", onDrop);
       }
     };
-    // eslint-disable-next-line
   }, [dropRef.current]);
-
 
   function filesArrayToFileList(filesArray: File[]): FileList {
     const dataTransfer = new DataTransfer();
@@ -126,7 +123,6 @@ const BulkImageUpload: React.FC = () => {
     setFiles(newFileList);
   };
 
-  // --- UPDATED: Batch Upload Logic to support large numbers of files ---
   const handleBulkUpload = async () => {
     if (!files || files.length === 0) {
       toast.error("No files selected.");
@@ -135,7 +131,6 @@ const BulkImageUpload: React.FC = () => {
 
     setIsUploading(true);
     
-    // Batch configuration
     const BATCH_SIZE = 20; 
     const allFiles = Array.from(files);
     const totalBatches = Math.ceil(allFiles.length / BATCH_SIZE);
@@ -155,9 +150,6 @@ const BulkImageUpload: React.FC = () => {
         const formData = new FormData();
         batchFiles.forEach((file) => formData.append("images[]", file));
         formData.append("type", pageType);
-
-        // Optional: Update loading toast text if you want, or rely on the big screen loader
-        // toast.loading(`Uploading batch ${i + 1} of ${totalBatches}...`);
 
         const response = await apiService.post<BulkUploadResponse>("/bulk-upload-image", formData, {
             headers: { "Content-Type": "multipart/form-data" },
@@ -190,32 +182,36 @@ const BulkImageUpload: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 relative">
+    <div className="space-y-4 relative w-full">
       <Toaster position="top-right" />
 
-      {/* --- FULL SCREEN LOADER OVERLAY --- */}
-      {isUploading && (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-white p-8 rounded-xl shadow-2xl flex flex-col items-center animate-pulse">
-            <FaSpinner className="animate-spin text-6xl text-blue-600 mb-4" />
-            <h3 className="text-xl font-bold text-gray-800">Processing Upload</h3>
-            <p className="text-gray-500 mt-2 text-center">
+      {/* --- 2. USE PORTAL FOR LOADER --- 
+          This moves the loader to document.body, allowing it to cover the Sidebar.
+      */}
+      {isUploading && createPortal(
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white p-6 md:p-8 rounded-xl shadow-2xl flex flex-col items-center animate-pulse w-full max-w-sm text-center">
+            <FaSpinner className="animate-spin text-5xl md:text-6xl text-blue-600 mb-4" />
+            <h3 className="text-lg md:text-xl font-bold text-gray-800">Processing Upload</h3>
+            <p className="text-gray-500 mt-2 text-sm md:text-base">
               Please wait while we process your images...<br/>
-              <span className="text-xs text-blue-500 font-semibold">Do not close this window.</span>
+              <span className="text-xs text-blue-500 font-semibold block mt-1">Do not close this window.</span>
             </p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <Breadcrumbs crumbs={crumbs} />
 
-      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 w-full text-black">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow-md border border-gray-200 w-full text-black">
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold mb-2">Bulk Image Upload</h2>
+          <h2 className="text-lg md:text-xl font-semibold mb-2">Bulk Image Upload</h2>
 
+          {/* DROP ZONE */}
           <div
             ref={dropRef}
-            className={`border-2 border-dashed transition-all cursor-pointer px-4 py-10 text-center rounded-lg min-h-[200px] flex flex-col ${
+            className={`border-2 border-dashed transition-all cursor-pointer px-4 py-8 md:py-10 text-center rounded-lg min-h-[200px] flex flex-col ${
               dragActive ? "border-blue-600 bg-blue-50" : "border-gray-300"
             } ${
               previews.length > 0 
@@ -229,45 +225,46 @@ const BulkImageUpload: React.FC = () => {
           >
             {previews.length === 0 ? (
               <>
-                <FaCloudUploadAlt className="text-5xl text-blue-700 mb-2" />
-                <span className="block font-bold text-lg mb-1">
+                <FaCloudUploadAlt className="text-4xl md:text-5xl text-blue-700 mb-3" />
+                <span className="block font-bold text-base md:text-lg mb-1">
                   Click or drag images to upload
                 </span>
                 <span className="block text-xs text-gray-500">
-                  Accepts JPG, PNG, WebP. Max 10 files at once.
+                  Accepts JPG, PNG, WebP.
                 </span>
               </>
             ) : (
               <div className="w-full">
                 <div className="text-center mb-4">
-                  <span className="block font-bold text-lg mb-1">
+                  <span className="block font-bold text-base md:text-lg mb-1">
                     {previews.length} image{previews.length !== 1 ? 's' : ''} selected
                   </span>
                   <span className="block text-xs text-gray-500">
                     Click to add more images or drag and drop
                   </span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-60 overflow-y-auto">
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[50vh] overflow-y-auto custom-scrollbar p-1">
                   {previews.map((src, index) => (
                     <div
                       key={index}
-                      className="relative rounded-lg shadow border overflow-hidden bg-white group"
+                      className="relative rounded-lg shadow border overflow-hidden bg-white group aspect-square"
                     >
                       <img
                         src={src}
-                        alt={`Selected Preview ${index}`}
-                        className="w-full h-40 object-cover"
+                        alt={`Preview ${index}`}
+                        className="w-full h-full object-cover"
                       />
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           removeImageAtIndex(index);
                         }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold focus:outline-none opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-sm"
                       >
                         ×
                       </button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-gray-900 bg-opacity-70 text-xs text-white px-1 py-0.5 truncate text-center">
+                      <div className="absolute bottom-0 left-0 right-0 bg-gray-900/80 text-[10px] text-white px-1 py-1 truncate text-center">
                         {files?.[index]?.name}
                       </div>
                     </div>
@@ -291,9 +288,9 @@ const BulkImageUpload: React.FC = () => {
               <button
                 disabled={isUploading}
                 onClick={handleBulkUpload}
-                className="flex items-center w-full bg-blue-700 hover:bg-purple-blue text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed transition justify-center"
+                className="flex items-center justify-center w-full bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-lg text-sm md:text-base font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                <FaCloudUploadAlt className="mr-2" />
+                <FaCloudUploadAlt className="mr-2 text-lg" />
                 {isUploading ? "Uploading..." : `Upload ${previews.length} Image${previews.length !== 1 ? 's' : ''}`}
               </button>
             </div>
@@ -301,12 +298,18 @@ const BulkImageUpload: React.FC = () => {
         </div>
       </div>
 
-      <UploadResultsModal
-        show={showModal}
-        onClose={() => setShowModal(false)}
-        results={uploadResults}
-        pageType={pageType}
-      />
+      {/* --- 3. USE PORTAL FOR RESULTS MODAL --- */}
+      {showModal && createPortal(
+        <div className="relative z-[9999]">
+            <UploadResultsModal
+                show={showModal}
+                onClose={() => setShowModal(false)}
+                results={uploadResults}
+                pageType={pageType}
+            />
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
