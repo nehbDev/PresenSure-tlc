@@ -183,7 +183,7 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
     exportPeriodsToExcel(data, selectedPeriod);
   };
 
-  const filteredStudents = useMemo(() => {
+  const searchedStudents = useMemo(() => {
     if (!data) return [];
     return data.students.filter(
       (student) =>
@@ -191,6 +191,18 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
         student.student_id.toLowerCase().includes(filterText.toLowerCase()),
     );
   }, [data, filterText]);
+
+  const maleStudents = useMemo(() => {
+    return searchedStudents.filter(
+      (s) => s.sex.toLowerCase() === "m" || s.sex.toLowerCase() === "male"
+    );
+  }, [searchedStudents]);
+
+  const femaleStudents = useMemo(() => {
+    return searchedStudents.filter(
+      (s) => s.sex.toLowerCase() === "f" || s.sex.toLowerCase() === "female"
+    );
+  }, [searchedStudents]);
 
   const periodOptions = useMemo(() => {
     return data ? Object.keys(data.periods_metadata) : [];
@@ -204,7 +216,7 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
         name: "ID",
         selector: (row) => row.student_id,
         sortable: true,
-        width: "120px", // Keep fixed for sticky
+        width: "120px",
         style: {
           position: "sticky",
           left: 0,
@@ -217,11 +229,10 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
         name: "STUDENT NAME",
         selector: (row) => row.name,
         sortFunction: (a, b) => {
-          if (a.sex !== b.sex) return b.sex.localeCompare(a.sex);
           return a.name.localeCompare(b.name);
         },
         sortable: true,
-        width: "220px", // Keep fixed for sticky
+        width: "220px",
         style: {
           fontWeight: "bold",
           color: "#374151",
@@ -248,7 +259,6 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
       const meta = data.periods_metadata[periodName];
       if (!meta.sessions) return;
 
-      // Session Columns (Keep small and fixed)
       meta.sessions.forEach((session) => {
         dynamicCols.push({
           name: (
@@ -270,7 +280,6 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
         });
       });
 
-      // Period Grade Column (ALLOW GROW)
       dynamicCols.push({
         name: `${periodName}`,
         selector: (row) => row.periods[periodName]?.attendance_grade || 0,
@@ -290,7 +299,6 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
           );
         },
         center: true,
-        // CHANGED: Use minWidth and grow to fill free space
         minWidth: "100px",
         grow: 1,
         style: { borderLeft: "1px solid #e5e7eb", backgroundColor: "#f9fafb" },
@@ -300,13 +308,14 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
     return [...baseColumns, ...dynamicCols];
   }, [data, selectedPeriod]);
 
-  const customStyles: TableStyles = {
+  // Dynamic Styles Generator (Matching your reference)
+  const getCustomStyles = (color: string): TableStyles => ({
     headCells: {
       style: {
-        fontSize: "12px",
-        fontWeight: "800",
+        fontSize: "12px", // Kept slightly smaller for attendance data density
+        fontWeight: "bold",
         padding: "10px 4px",
-        backgroundColor: "blue",
+        backgroundColor: color,
         color: "white",
         justifyContent: "center",
       },
@@ -320,21 +329,55 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
     },
     headRow: {
       style: {
-        borderTopLeftRadius: "8px",
-        borderTopRightRadius: "8px",
+        // Removed border radius here since the title wrapper handles the curved edges
+        borderTopLeftRadius: "0px", 
+        borderTopRightRadius: "0px",
         overflow: "hidden",
       },
     },
     rows: {
       style: { minHeight: "50px" },
     },
-  };
+  });
+
+  // Reusable Table Component (Matching your reference structure exactly)
+  const renderTable = (
+    title: string,
+    dataList: StudentReport[],
+    headerColor: string,
+    titleBgClass: string,
+    titleTextClass: string
+  ) => (
+    <div className="space-y-2">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        {/* Title Bar styling mapped to Male/Female */}
+        <div className={`p-4 border-b border-gray-200 flex justify-between items-center ${titleBgClass}`}>
+          <h2 className={`text-lg font-bold flex items-center gap-2 ${titleTextClass}`}>
+            {title}
+          </h2>
+        </div>
+        <DataTable
+          columns={columns}
+          data={dataList}
+          customStyles={getCustomStyles(headerColor)}
+          highlightOnHover
+          striped
+          dense
+          // Scroll removed (no fixedHeader props)
+          noDataComponent={
+            <div className="p-6 text-center text-gray-400 italic">
+              No {title.toLowerCase()} students found.
+            </div>
+          }
+        />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-6 w-full pb-8">
       {/* Container for Filters and Export */}
-      <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-white rounded-md shadow-sm border border-gray-200">
-        {/* 1. Dropdown Filter */}
+      <div className="flex flex-wrap items-center gap-4 p-4 bg-white rounded-md shadow-sm border border-gray-200">
         <div className="min-h-[42px] w-48 flex-shrink-0">
           <DropdownFilter
             label="Period"
@@ -344,7 +387,6 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
           />
         </div>
 
-        {/* 2. Search Input */}
         <div className="flex-1 min-h-[42px]">
           <div className="relative flex items-center h-full">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -358,7 +400,6 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
           </div>
         </div>
 
-        {/* 3. Export Button */}
         <button
           onClick={handleExport}
           disabled={!data || loading}
@@ -369,34 +410,21 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
         </button>
       </div>
 
-      <div className="rounded-lg border border-gray-200 overflow-hidden shadow-sm bg-white w-full">
-        {loading ? (
-          <div className="p-4">
-            {[...Array(8)].map((_, i) => (
-              <TableSkeleton key={i} />
-            ))}
-          </div>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={filteredStudents}
-            customStyles={customStyles}
-            pagination
-            paginationPerPage={15}
-            highlightOnHover
-            striped
-            responsive
-            dense
-            fixedHeader
-            fixedHeaderScrollHeight="600px"
-            noDataComponent={
-              <div className="py-8 text-center text-gray-500 bg-white">
-                No data found.
-              </div>
-            }
-          />
-        )}
-      </div>
+      {loading ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          {[...Array(8)].map((_, i) => (
+            <TableSkeleton key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* MALE TABLE */}
+          {renderTable("Male", maleStudents, "#2563eb", "bg-blue-50", "text-blue-800")}
+
+          {/* FEMALE TABLE */}
+          {renderTable("Female", femaleStudents, "#db2777", "bg-pink-50", "text-pink-800")}
+        </div>
+      )}
     </div>
   );
 };
