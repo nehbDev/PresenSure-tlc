@@ -227,7 +227,7 @@ const LoginPage: React.FC = () => {
 
       {/* Footer credit */}
       <p className="mt-8 text-blue-800/60 text-[10px] font-medium uppercase tracking-widest">
-        © 2026 PresenSure
+        © 2026 PresenSure-tlc
       </p>
     </div>
   );
