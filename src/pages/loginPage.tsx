@@ -105,14 +105,18 @@ const LoginPage: React.FC = () => {
 
       {/* ✅ NEW LOCATION: Top Right Download Button */}
       <a
-      
-        href="https://github.com/nehbDev/PresenSure-tlc/releases/download/v1.0/PresenSure.03.apk"
+        href="https://github.com/nehbDev/PresenSure-tlc/releases/latest/download/PresenSure.03.apk"
         target="_blank"
         rel="noopener noreferrer"
-className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg-blue-700 text-white hover:bg-white hover:text-blue-700 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 z-50 group border border-white/20"      >
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg-blue-700 text-white hover:bg-white hover:text-blue-700 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 z-50 group border border-white/20"
+      >
         <FaMobileAlt className="h-4 w-4" />
-        <span className="text-xs font-bold tracking-wide hidden sm:inline">Download App</span>
-        <span className="text-xs font-bold tracking-wide sm:hidden">Download App</span>
+        <span className="text-xs font-bold tracking-wide hidden sm:inline">
+          Download App
+        </span>
+        <span className="text-xs font-bold tracking-wide sm:hidden">
+          Download App
+        </span>
         <FaDownload className="h-3 w-3 ml-1 opacity-50 group-hover:opacity-100 transition-opacity" />
       </a>
 
@@ -216,7 +220,7 @@ className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg
               )}
             </button>
           </form>
-          
+
           {/* REMOVED: Old Download App Section */}
         </div>
       </div>
