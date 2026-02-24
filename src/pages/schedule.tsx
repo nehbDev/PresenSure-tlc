@@ -2,7 +2,12 @@ import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import Breadcrumbs from "../layout/Breadcrumbs";
-import { FaSearch, FaFileImport, FaPlusCircle, FaArchive } from "react-icons/fa";
+import {
+  FaSearch,
+  FaFileImport,
+  FaPlusCircle,
+  FaArchive,
+} from "react-icons/fa";
 import apiService from "../services/ApiService";
 import ScheduleTable from "../components/tables/scheduleTable";
 import { useQuery } from "@tanstack/react-query"; // 1. Import useQuery
@@ -108,15 +113,15 @@ const Schedule: React.FC = () => {
       {/* Header / Search Bar */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-white border-b border-gray-300 rounded-lg shadow-sm text-black">
         <div className="flex justify-start w-full">
-          <div className="relative w-full md:w-96">
+          <div className="relative w-full md:w-96 h-[42px]">
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
             <input
               type="text"
               placeholder="Search courses..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="border border-gray-400 rounded pl-8 pr-2 py-1 h-9 w-full focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="w-full h-full pl-10 pr-4 rounded-md border border-gray-300 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#2D336B] focus:border-transparent"
             />
-            <FaSearch className="absolute left-2.5 top-2.5 text-gray-500 w-4 h-4" />
           </div>
         </div>
         <div className="flex justify-end space-x-2">

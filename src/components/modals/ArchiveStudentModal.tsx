@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { FaExclamationTriangle } from "react-icons/fa";
 
 interface ConfirmationModalProps {
@@ -6,11 +7,11 @@ interface ConfirmationModalProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: React.ReactNode; // Allows passing strings or JSX (bold text)
+  message: React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   isLoading?: boolean;
-  variant?: "danger" | "warning" | "info"; // Optional styling variants
+  variant?: "danger" | "warning" | "info";
 }
 
 const ArchiveStudent: React.FC<ConfirmationModalProps> = ({
@@ -26,22 +27,23 @@ const ArchiveStudent: React.FC<ConfirmationModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  // dynamic styles based on variant
   const iconColor = variant === "danger" ? "text-red-600" : "text-yellow-600";
   const iconBg = variant === "danger" ? "bg-red-100" : "bg-yellow-100";
-  const buttonBg = variant === "danger" ? "bg-red-600 hover:bg-red-700 focus:ring-red-500" : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500";
+  const buttonBg =
+    variant === "danger"
+      ? "bg-red-600 hover:bg-red-700 focus:ring-red-500"
+      : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500";
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/20 bg-opacity-50 backdrop-blur-sm transition-opacity p-4">
-      {/* Modal Container */}
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/20 bg-opacity-50 backdrop-blur-sm transition-opacity p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all scale-100 animate-fadeIn">
         <div className="p-6">
-          {/* Icon */}
-          <div className={`flex items-center justify-center w-12 h-12 mx-auto ${iconBg} rounded-full mb-4`}>
+          <div
+            className={`flex items-center justify-center w-12 h-12 mx-auto ${iconBg} rounded-full mb-4`}
+          >
             <FaExclamationTriangle className={`w-6 h-6 ${iconColor}`} />
           </div>
 
-          {/* Text Content */}
           <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
             {title}
           </h3>
@@ -49,7 +51,6 @@ const ArchiveStudent: React.FC<ConfirmationModalProps> = ({
             {message}
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-3 justify-center">
             <button
               onClick={onClose}
@@ -58,7 +59,7 @@ const ArchiveStudent: React.FC<ConfirmationModalProps> = ({
             >
               {cancelText}
             </button>
-            
+
             <button
               onClick={onConfirm}
               disabled={isLoading}
@@ -73,7 +74,8 @@ const ArchiveStudent: React.FC<ConfirmationModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

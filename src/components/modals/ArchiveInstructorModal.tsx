@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom"; 
 import { FaExclamationTriangle } from "react-icons/fa";
 
 interface ArchiveInstructorModalProps {
@@ -24,8 +25,8 @@ const ArchiveInstructorModal: React.FC<ArchiveInstructorModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/20 bg-opacity-50 backdrop-blur-sm transition-opacity p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/20 bg-opacity-50 backdrop-blur-sm transition-opacity p-4">
       {/* Modal Container */}
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all scale-100 animate-fadeIn">
         <div className="p-6">
@@ -66,7 +67,8 @@ const ArchiveInstructorModal: React.FC<ArchiveInstructorModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

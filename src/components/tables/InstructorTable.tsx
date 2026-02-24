@@ -22,6 +22,40 @@ interface Props {
   loading: boolean;
 }
 
+// 1. Added your CustomPagination component here
+const CustomPagination = ({
+  currentPage,
+  rowsPerPage,
+  rowCount,
+  onChangePage,
+}: any) => {
+  const totalPages = Math.ceil(rowCount / rowsPerPage);
+
+  return (
+    <div className="flex flex-wrap items-center justify-between mt-3 px-2 gap-2 pb-2">
+      <button
+        onClick={() => onChangePage(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors"
+      >
+        Prev
+      </button>
+
+      <span className="text-sm font-medium text-gray-600">
+        Page {currentPage} of {totalPages || 1}
+      </span>
+
+      <button
+        onClick={() => onChangePage(currentPage + 1)}
+        disabled={currentPage === totalPages || totalPages === 0}
+        className="px-3 py-1 bg-gray-200 text-gray-700 rounded disabled:opacity-50 hover:bg-gray-300 transition-colors"
+      >
+        Next
+      </button>
+    </div>
+  );
+};
+
 const InstructorTable: React.FC<Props> = ({ instructors, loading }) => {
   const navigate = useNavigate();
 
@@ -30,29 +64,20 @@ const InstructorTable: React.FC<Props> = ({ instructors, loading }) => {
       name: "PROFILE",
       cell: (row) => (
         <div className="py-2">
-            {row.profile?.image_link ? (
-              <img
-                src={row.profile.image_link}
-                alt={`${row.firstname} ${row.lastname}`}
-                className="w-10 h-10 rounded-full object-cover border border-gray-200"
-              />
-            ) : (
-              <img
-                src={noProfile}
-                alt="No Profile"
-                className="w-10 h-10 rounded-full object-cover border border-gray-200"
-              />
-            )}
+            <img
+              src={row.profile?.image_link || noProfile}
+              alt={`${row.firstname} ${row.lastname}`}
+              className="w-10 h-10 rounded-full object-cover border border-gray-200"
+            />
         </div>
       ),
       center: true,
-      width: "100px", // Slightly wider for breathing room
+      width: "100px", 
     },
     {
       name: "INSTRUCTOR ID",
       selector: (row) => row.id || "N/A",
-      sortable: true,
-      width: "140px", // Fixed width for IDs keeps them neat
+      width: "160px", 
     },
     {
       name: "FULL NAME",
@@ -60,15 +85,13 @@ const InstructorTable: React.FC<Props> = ({ instructors, loading }) => {
         `${row.lastname}, ${row.firstname}${
           row.middle_initial ? ` ${row.middle_initial}` : ""
         }`,
-      sortable: true,
-      grow: 2, // Takes up 2x space compared to other columns
-      wrap: true, // Ensures long names don't break layout
+      grow: 1, 
+      wrap: true, 
     },
     {
       name: "DEPARTMENT",
       selector: (row) => row.department || "N/A",
-      sortable: true,
-      grow: 1, // Takes up remaining space
+      grow: 1, 
       wrap: true,
     },
     {
@@ -87,7 +110,7 @@ const InstructorTable: React.FC<Props> = ({ instructors, loading }) => {
       ignoreRowClick: true,
       allowOverflow: true,
       button: true,
-      width: "100px",
+      width: "100px", 
       center: true,
     },
   ];
@@ -95,7 +118,7 @@ const InstructorTable: React.FC<Props> = ({ instructors, loading }) => {
   const customStyles: TableStyles = {
     headRow: {
       style: {
-        backgroundColor: "blue", // Matches your button color for consistency
+        backgroundColor: "blue",
         color: "white",
         borderTopLeftRadius: "8px",
         borderTopRightRadius: "8px",
@@ -109,15 +132,15 @@ const InstructorTable: React.FC<Props> = ({ instructors, loading }) => {
         textTransform: "uppercase",
         paddingLeft: "16px",
         paddingRight: "16px",
-        color: "white", // Ensure text remains white
+        color: "white",
       },
     },
     rows: {
       style: {
         fontSize: "14px",
         fontWeight: "500",
-        color: "#334155", // Slate-700 for better readability
-        minHeight: "60px", // More vertical breathing room
+        color: "#334155",
+        minHeight: "60px",
         "&:hover": {
           backgroundColor: "#f1f5f9",
           cursor: "pointer",
@@ -130,12 +153,6 @@ const InstructorTable: React.FC<Props> = ({ instructors, loading }) => {
         paddingRight: "16px",
       },
     },
-    pagination: {
-        style: {
-            borderBottomLeftRadius: "8px",
-            borderBottomRightRadius: "8px",
-        }
-    }
   };
 
   if (loading) {
@@ -156,10 +173,11 @@ const InstructorTable: React.FC<Props> = ({ instructors, loading }) => {
         data={instructors}
         customStyles={customStyles}
         pagination
+        paginationPerPage={10} // 2. Added default rows per page
+        paginationComponent={CustomPagination} // 3. Connected your custom component
         highlightOnHover
         striped
         responsive
-        // Removed 'dense' to give the table a more modern, spacious feel
         noDataComponent={
           <div className="text-center p-10">
             <p className="text-gray-500 text-lg font-medium">No instructors found.</p>

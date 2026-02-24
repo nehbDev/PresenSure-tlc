@@ -8,7 +8,6 @@ import { FaAngleRight } from "react-icons/fa";
 import noProfile from "../../assets/noProfile.webp";
 import TableSkeleton from "../contentLoader/TableSkeleton";
 
-// ✅ Updated Interface to match your API JSON structure
 export interface EnrolledStudent {
   user_id: string;
   firstname: string;
@@ -16,13 +15,13 @@ export interface EnrolledStudent {
   middle_initial?: string;
   suffix?: string;
   sex: string;
-  
-  // 1. Flat Data (from ScheduleDetails)
+
+  // 1. Flat Data
   program?: string;
   year_level?: string;
   block?: string;
 
-  // 2. Nested Singular Data (if you fix backend to hasOne)
+  // 2. Nested Singular Data
   student?: {
     program?: string;
     year?: string;
@@ -30,20 +29,19 @@ export interface EnrolledStudent {
     block?: string;
   };
 
-  // 3. ✅ Nested Array Data (The structure you currently have)
+  // 3. Nested Array Data
   students?: {
     program?: string;
     year?: string;
     block?: string;
     semester_id?: number;
-    // ... other fields
   }[];
 
   profile?: {
     image_link: string;
   };
-  
-  [key: string]: any; 
+
+  [key: string]: any;
 }
 
 interface Props {
@@ -57,33 +55,32 @@ const EnrolledStudentsTable: React.FC<Props> = ({
 }) => {
   const navigate = useNavigate();
 
-  // Helper to extract the correct data from flat, singular object, or array
-  const getData = (row: EnrolledStudent, field: 'program' | 'year' | 'block') => {
-    // A. Check Flat
+  const getData = (
+    row: EnrolledStudent,
+    field: "program" | "year" | "block",
+  ) => {
     if (row[field]) return row[field];
-    if (field === 'year' && row.year_level) return row.year_level; // Handle year_level alias
+    if (field === "year" && row.year_level) return row.year_level;
 
-    // B. Check Singular 'student' object
     if (row.student) {
       if (row.student[field]) return row.student[field];
-      if (field === 'year' && row.student.year_level) return row.student.year_level;
+      if (field === "year" && row.student.year_level)
+        return row.student.year_level;
     }
 
-    // C. ✅ Check Plural 'students' Array (Grab the latest entry)
     if (row.students && row.students.length > 0) {
-      // We grab the last item in the array as it's typically the most recent enrollment
-      const latest = row.students[row.students.length - 1]; 
+      const latest = row.students[row.students.length - 1];
       if (latest[field]) return latest[field];
     }
 
     return "N/A";
   };
 
-  // Separate Students by Sex
   const maleStudents = students.filter((s) => s.sex?.toLowerCase() === "male");
-  const femaleStudents = students.filter((s) => s.sex?.toLowerCase() === "female");
+  const femaleStudents = students.filter(
+    (s) => s.sex?.toLowerCase() === "female",
+  );
 
-  // Define Columns
   const columns: TableColumn<EnrolledStudent>[] = [
     {
       name: "PROFILE",
@@ -102,7 +99,6 @@ const EnrolledStudentsTable: React.FC<Props> = ({
     {
       name: "STUDENT ID",
       selector: (row) => row.user_id,
-      sortable: true,
       grow: 1,
     },
     {
@@ -111,28 +107,24 @@ const EnrolledStudentsTable: React.FC<Props> = ({
         `${row.lastname}, ${row.firstname} ${row.middle_initial || ""} ${
           row.suffix || ""
         }`,
-      sortable: true,
       wrap: true,
       grow: 3,
     },
     {
       name: "PROGRAM",
-      selector: (row) => getData(row, 'program'),
-      sortable: true,
+      selector: (row) => getData(row, "program"),
       grow: 1,
       center: true,
     },
     {
       name: "YEAR LEVEL",
-      selector: (row) => getData(row, 'year'),
-      sortable: true,
+      selector: (row) => getData(row, "year"),
       grow: 1,
       center: true,
     },
     {
       name: "BLOCK",
-      selector: (row) => getData(row, 'block'),
-      sortable: true,
+      selector: (row) => getData(row, "block"),
       grow: 1,
       center: true,
     },
@@ -142,7 +134,10 @@ const EnrolledStudentsTable: React.FC<Props> = ({
         <button
           className="flex items-center justify-center bg-[#2D336B] text-white p-1.5 text-xs rounded-full hover:bg-[#A9B5DF] transition-colors shadow-sm"
           onClick={() =>
-            navigate(`/students/student-details?id=${row.user_id}`)
+            // ADDED: { state: { source: "course_details" } }
+            navigate(`/students/student-details?id=${row.user_id}`, {
+              state: { source: "course_details" },
+            })
           }
           title="View Student Details"
         >
@@ -193,20 +188,15 @@ const EnrolledStudentsTable: React.FC<Props> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* --- MALE TABLE --- */}
-      <div className="space-y-2">
+      <div className="space-y-3">
+        <h2 className="text-lg font-bold text-blue-800 ml-1">Male</h2>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-blue-50">
-            <h2 className="text-lg font-bold text-blue-800 flex items-center gap-2">
-                Male
-            </h2>
-            </div>
           <DataTable
             columns={columns}
             data={maleStudents}
-            customStyles={getCustomStyles("#2563eb")} // Blue Header
-            pagination
+            customStyles={getCustomStyles("#2563eb")}
             highlightOnHover
             striped
             dense
@@ -220,18 +210,13 @@ const EnrolledStudentsTable: React.FC<Props> = ({
       </div>
 
       {/* --- FEMALE TABLE --- */}
-      <div className="space-y-2">
+      <div className="space-y-3">
+        <h2 className="text-lg font-bold text-pink-800 ml-1">Female</h2>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-pink-50">
-            <h2 className="text-lg font-bold text-pink-800 flex items-center gap-2">
-                Female
-            </h2>
-            </div>
           <DataTable
             columns={columns}
             data={femaleStudents}
-            customStyles={getCustomStyles("#db2777")} // Pink Header
-            pagination
+            customStyles={getCustomStyles("#db2777")}
             highlightOnHover
             striped
             dense

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import apiService from "../services/ApiService";
 import noProfile from "../assets/noProfile.webp";
@@ -74,6 +74,7 @@ interface ApiResponse {
 const StudentDetails: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const id = searchParams.get("id");
 
   // State for Modal
@@ -81,11 +82,16 @@ const StudentDetails: React.FC = () => {
   const [isArchiving, setIsArchiving] = useState(false);
   const queryClient = useQueryClient();
 
-  const crumbs = [
-    { label: "Students", to: "/students" },
-    { label: "Student Details" },
-  ];
+  const isFromCourseDetails = location.state?.source === "course_details";
 
+  const crumbs = isFromCourseDetails
+    ? [
+        { label: "Schedules", to: "/schedules" },
+        // Use -1 for the 'to' path so it acts like a back button to the exact course they were viewing
+        { label: "Course Details", to: -1 as any },
+        { label: "Student Details" },
+      ]
+    : [{ label: "Students", to: "/students" }, { label: "Student Details" }];
   const {
     data: student,
     isLoading,

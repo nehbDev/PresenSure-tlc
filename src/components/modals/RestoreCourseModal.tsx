@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { FaExclamationTriangle, FaCheckCircle, FaInfoCircle } from "react-icons/fa";
 
 interface ConfirmationModalProps {
@@ -46,7 +47,7 @@ const RestoreCourseModal: React.FC<ConfirmationModalProps> = ({
 
   const currentStyle = styles[variant];
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/20 bg-opacity-50 backdrop-blur-sm transition-opacity p-4 animate-fadeIn">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all scale-100">
         <div className="p-6">
@@ -84,7 +85,8 @@ const RestoreCourseModal: React.FC<ConfirmationModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
