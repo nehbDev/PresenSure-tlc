@@ -52,15 +52,10 @@ const LoginPage: React.FC = () => {
         localStorage.removeItem("token");
         toast.error("Students cannot access the dashboard.");
         return;
-      } else if (data.user.role === "instructor") {
-        navigate("/records", {
-          state: { successMessage: "Login successful!" },
-        });
-      } else {
-        navigate("/students", {
-          state: { successMessage: "Login successful!" },
-        });
       }
+      navigate("/dashboard", {
+        state: { successMessage: "Login successful!" },
+      });
     } catch (error: any) {
       if (error.response && error.response.data?.errors) {
         const errors = error.response.data.errors;

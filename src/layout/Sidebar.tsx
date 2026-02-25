@@ -11,6 +11,7 @@ import {
   FaChevronUp,
   FaChevronDown,
   FaTimes,
+  FaHome,
 } from "react-icons/fa";
 import logo from "../assets/icon_nobg.webp";
 
@@ -20,7 +21,7 @@ interface SidebarProps {
   closeMobileSidebar: () => void;
   role: string | null;
   userName: string | null;
-  isBlurred?: boolean; // Controls the blur effect
+  isBlurred?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -39,8 +40,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     location.pathname.startsWith("/students") ||
     location.pathname.startsWith("/instructors");
 
-  // Logic to determine if text/labels should be visible
-  // Visible if: It's Mobile and Open OR It's Desktop and Expanded
   const showText = isMobileOpen || !isSidebarCollapsed;
 
   // --- STYLES ---
@@ -71,8 +70,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     }`;
 
   // --- EFFECTS ---
-  
-  // Close dropdown when clicking outside (only relevant for desktop collapsed tooltip)
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -90,24 +87,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isSidebarCollapsed, isMobileOpen]);
 
-  // Auto-close dropdown when sidebar collapses
   useEffect(() => {
     if (isSidebarCollapsed && !isMobileOpen) {
       setIsUsersOpen(false);
     }
   }, [location, isSidebarCollapsed, isMobileOpen]);
 
-  // --- DYNAMIC CLASSES ---
-  
-  // Width: Fixed 64 (16rem) on Mobile. Dynamic on Desktop.
   const widthClass = isMobileOpen ? "w-64" : (isSidebarCollapsed ? "w-20" : "w-64");
-  
-  // Transform: Slide in/out on Mobile. Always visible on Desktop.
   const transformClass = isMobileOpen 
     ? "translate-x-0 shadow-2xl" 
     : "max-md:-translate-x-full md:translate-x-0";
-
-  // Blur: Applies pointer-events-none to prevent clicking when blurred
   const blurClass = isBlurred ? "filter blur-sm pointer-events-none select-none" : "";
 
   return (
@@ -116,7 +105,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       ${widthClass} ${transformClass} ${blurClass}`}
       style={{ overflow: "visible" }}
     >
-      {/* Header / Logo */}
       <div className="h-16 flex-shrink-0 bg-gradient-to-r from-blue-50 to-white border-b border-gray-200 flex items-center justify-between px-4">
         <div className={`flex items-center ${!showText ? "justify-center w-full" : ""}`}>
           <img src={logo} alt="Logo" className="h-10 w-10 md:h-11 md:w-11 object-contain" />
@@ -126,8 +114,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             </span>
           )}
         </div>
-        
-        {/* Mobile Close Button */}
         <button
           className="md:hidden text-gray-500 hover:text-red-500 p-1 rounded-md hover:bg-gray-100 transition-colors"
           onClick={closeMobileSidebar}
@@ -136,118 +122,100 @@ const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Navigation Links */}
       <div className="flex-1 px-3 mt-4 overflow-y-auto custom-scrollbar overflow-x-hidden">
         <nav className="space-y-1.5 pb-4">
           
-          {/* USERS MENU (Students/Instructors) */}
-          {role !== "instructor" && (
-            <div className="relative" ref={usersMenuRef}>
-              <button
-                onClick={() => setIsUsersOpen((prev) => !prev)}
-                className={staticLinkStyles(isUserSubActive)}
-                title={!showText ? "Users" : ""}
-              >
-                <div className="w-6 flex justify-center items-center">
-                  <FaUser className={`w-5 h-5 ${iconStyles(isUserSubActive)}`} />
-                </div>
-                {showText && (
-                  <>
-                    <span className="ml-3 flex-1 text-left text-sm font-medium whitespace-nowrap">
-                      Users
-                    </span>
-                    {isUsersOpen ? (
-                      <FaChevronUp className="w-3 h-3 text-gray-400" />
-                    ) : (
-                      <FaChevronDown className="w-3 h-3 text-gray-400" />
-                    )}
-                  </>
-                )}
-              </button>
-
-              {/* Inline Submenu (Mobile / Desktop Expanded) */}
-              {showText && isUsersOpen && (
-                <div className="mt-1 space-y-1 overflow-hidden transition-all duration-200">
-                  <NavLink
-                    to="/students"
-                    className={subLinkStyles}
-                    onClick={() => { if (isMobileOpen) closeMobileSidebar(); }}
-                  >
-                    <div className="w-6 flex justify-center items-center">
-                      <FaGraduationCap className="w-4 h-4 text-gray-500 group-hover:text-blue-500" />
-                    </div>
-                    <span className="ml-3 text-sm whitespace-nowrap">Students</span>
-                  </NavLink>
-                  <NavLink
-                    to="/instructors"
-                    className={subLinkStyles}
-                    onClick={() => { if (isMobileOpen) closeMobileSidebar(); }}
-                  >
-                    <div className="w-6 flex justify-center items-center">
-                      <FaChalkboardTeacher className="w-4 h-4 text-gray-500 group-hover:text-blue-500" />
-                    </div>
-                    <span className="ml-3 text-sm whitespace-nowrap">Instructors</span>
-                  </NavLink>
-                </div>
-              )}
-
-              {/* Floating Tooltip Submenu (Desktop Collapsed Only) */}
-              {!isMobileOpen && isSidebarCollapsed && isUsersOpen && (
-                <div
-                  ref={dropdownRef}
-                  className="fixed z-50 bg-white shadow-xl rounded-lg border border-gray-200 p-2 w-48"
-                  style={{
-                    left: "4.5rem",
-                    top: usersMenuRef.current
-                      ? usersMenuRef.current.getBoundingClientRect().top + "px"
-                      : "80px",
-                  }}
-                >
-                  <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    User Management
-                  </p>
-                  <NavLink
-                    to="/students"
-                    className="flex items-center px-3 py-2 rounded-md hover:bg-blue-50 text-gray-700 transition-colors"
-                    onClick={() => setIsUsersOpen(false)}
-                  >
-                    <FaGraduationCap className="w-4 h-4 mr-3 text-gray-500" />
-                    <span className="text-sm font-medium">Students</span>
-                  </NavLink>
-                  <NavLink
-                    to="/instructors"
-                    className="flex items-center px-3 py-2 rounded-md hover:bg-blue-50 text-gray-700 transition-colors"
-                    onClick={() => setIsUsersOpen(false)}
-                  >
-                    <FaChalkboardTeacher className="w-4 h-4 mr-3 text-gray-500" />
-                    <span className="text-sm font-medium">Instructors</span>
-                  </NavLink>
-                </div>
-              )}
+          {/* VISIBLE TO EVERYONE: DASHBOARD */}
+          <NavLink
+            to="/dashboard"
+            className={linkStyles}
+            onClick={() => { if (isMobileOpen) closeMobileSidebar(); }}
+            title={!showText ? "Dashboard" : ""}
+          >
+            <div className="w-6 flex justify-center items-center">
+              <FaHome className={`w-5 h-5 ${iconStyles(location.pathname === "/dashboard" || location.pathname === "/")}`} />
             </div>
-          )}
+            {showText && <span className="ml-3 text-sm font-medium whitespace-nowrap">Dashboard</span>}
+          </NavLink>
 
-          {/* STANDARD LINKS */}
+          {/* ROLE-RESTRICTED LINKS (Users, Schedules, Semesters) */}
           {role !== "instructor" && (
             <>
-              <NavLink
-                to="/schedules"
-                className={linkStyles}
-                onClick={() => { if (isMobileOpen) closeMobileSidebar(); }}
-                title={!showText ? "Schedules" : ""}
-              >
+              {/* USERS MENU */}
+              <div className="relative" ref={usersMenuRef}>
+                <button
+                  onClick={() => setIsUsersOpen((prev) => !prev)}
+                  className={staticLinkStyles(isUserSubActive)}
+                  title={!showText ? "Users" : ""}
+                >
+                  <div className="w-6 flex justify-center items-center">
+                    <FaUser className={`w-5 h-5 ${iconStyles(isUserSubActive)}`} />
+                  </div>
+                  {showText && (
+                    <>
+                      <span className="ml-3 flex-1 text-left text-sm font-medium whitespace-nowrap">
+                        Users
+                      </span>
+                      {isUsersOpen ? (
+                        <FaChevronUp className="w-3 h-3 text-gray-400" />
+                      ) : (
+                        <FaChevronDown className="w-3 h-3 text-gray-400" />
+                      )}
+                    </>
+                  )}
+                </button>
+
+                {/* Inline Submenu */}
+                {showText && isUsersOpen && (
+                  <div className="mt-1 space-y-1 overflow-hidden transition-all duration-200">
+                    <NavLink to="/students" className={subLinkStyles} onClick={() => { if (isMobileOpen) closeMobileSidebar(); }}>
+                      <div className="w-6 flex justify-center items-center">
+                        <FaGraduationCap className="w-4 h-4 text-gray-500 group-hover:text-blue-500" />
+                      </div>
+                      <span className="ml-3 text-sm whitespace-nowrap">Students</span>
+                    </NavLink>
+                    <NavLink to="/instructors" className={subLinkStyles} onClick={() => { if (isMobileOpen) closeMobileSidebar(); }}>
+                      <div className="w-6 flex justify-center items-center">
+                        <FaChalkboardTeacher className="w-4 h-4 text-gray-500 group-hover:text-blue-500" />
+                      </div>
+                      <span className="ml-3 text-sm whitespace-nowrap">Instructors</span>
+                    </NavLink>
+                  </div>
+                )}
+
+                {/* Floating Tooltip Submenu */}
+                {!isMobileOpen && isSidebarCollapsed && isUsersOpen && (
+                  <div
+                    ref={dropdownRef}
+                    className="fixed z-50 bg-white shadow-xl rounded-lg border border-gray-200 p-2 w-48"
+                    style={{
+                      left: "4.5rem",
+                      top: usersMenuRef.current ? usersMenuRef.current.getBoundingClientRect().top + "px" : "80px",
+                    }}
+                  >
+                    <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">User Management</p>
+                    <NavLink to="/students" className="flex items-center px-3 py-2 rounded-md hover:bg-blue-50 text-gray-700 transition-colors" onClick={() => setIsUsersOpen(false)}>
+                      <FaGraduationCap className="w-4 h-4 mr-3 text-gray-500" />
+                      <span className="text-sm font-medium">Students</span>
+                    </NavLink>
+                    <NavLink to="/instructors" className="flex items-center px-3 py-2 rounded-md hover:bg-blue-50 text-gray-700 transition-colors" onClick={() => setIsUsersOpen(false)}>
+                      <FaChalkboardTeacher className="w-4 h-4 mr-3 text-gray-500" />
+                      <span className="text-sm font-medium">Instructors</span>
+                    </NavLink>
+                  </div>
+                )}
+              </div>
+
+              {/* SCHEDULES */}
+              <NavLink to="/schedules" className={linkStyles} onClick={() => { if (isMobileOpen) closeMobileSidebar(); }} title={!showText ? "Schedules" : ""}>
                 <div className="w-6 flex justify-center items-center">
                   <FaCalendar className={`w-5 h-5 ${iconStyles(location.pathname.startsWith("/schedules"))}`} />
                 </div>
                 {showText && <span className="ml-3 text-sm font-medium whitespace-nowrap">Schedules</span>}
               </NavLink>
 
-              <NavLink
-                to="/semester"
-                className={linkStyles}
-                onClick={() => { if (isMobileOpen) closeMobileSidebar(); }}
-                title={!showText ? "Semesters" : ""}
-              >
+              {/* SEMESTERS */}
+              <NavLink to="/semester" className={linkStyles} onClick={() => { if (isMobileOpen) closeMobileSidebar(); }} title={!showText ? "Semesters" : ""}>
                 <div className="w-6 flex justify-center items-center">
                   <FaSchool className={`w-5 h-5 ${iconStyles(location.pathname.startsWith("/semester"))}`} />
                 </div>
@@ -256,29 +224,21 @@ const Sidebar: React.FC<SidebarProps> = ({
             </>
           )}
 
-          <NavLink
-            to="/records"
-            className={linkStyles}
-            onClick={() => { if (isMobileOpen) closeMobileSidebar(); }}
-            title={!showText ? "Records" : ""}
-          >
+          {/* VISIBLE TO EVERYONE: Records & My Schedule */}
+          <NavLink to="/records" className={linkStyles} onClick={() => { if (isMobileOpen) closeMobileSidebar(); }} title={!showText ? "Records" : ""}>
             <div className="w-6 flex justify-center items-center">
               <FaClipboardList className={`w-5 h-5 ${iconStyles(location.pathname.startsWith("/records"))}`} />
             </div>
             {showText && <span className="ml-3 text-sm font-medium whitespace-nowrap">Records</span>}
           </NavLink>
 
-          <NavLink
-            to="/mySchedule"
-            className={linkStyles}
-            onClick={() => { if (isMobileOpen) closeMobileSidebar(); }}
-            title={!showText ? "My Schedule" : ""}
-          >
+          <NavLink to="/mySchedule" className={linkStyles} onClick={() => { if (isMobileOpen) closeMobileSidebar(); }} title={!showText ? "My Schedule" : ""}>
             <div className="w-6 flex justify-center items-center">
               <FaClock className={`w-5 h-5 ${iconStyles(location.pathname.startsWith("/mySchedule"))}`} />
             </div>
             {showText && <span className="ml-3 text-sm font-medium whitespace-nowrap">My Schedule</span>}
           </NavLink>
+
         </nav>
       </div>
     </aside>
