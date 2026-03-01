@@ -29,7 +29,7 @@ interface ApiResponse {
 
 const ArchiveInstructor: React.FC = () => {
   const [search, setSearch] = useState("");
-  const crumbs = [{ label: "Instructors", to: "/instructors" }, { label: "Archives" }];
+  const crumbs = [{ label: "Dashboard", to: "/dashboard" },{ label: "Instructors", to: "/instructors" }, { label: "Archives" }];
 
   // --- QUERY LOGIC ---
   const {

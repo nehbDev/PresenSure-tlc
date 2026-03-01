@@ -218,7 +218,7 @@ const AttendanceRecord: React.FC = () => {
     navigate(`/records/take-attendance/${courseId}`);
   };
 
-  const crumbs = [{ label: "Attendance Records" }];
+  const crumbs = [{ label: "Dashboard", to: "/dashboard" },{ label: "Attendance Records" }];
   const loading = isLoading; 
 
   return (

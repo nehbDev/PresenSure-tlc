@@ -13,8 +13,8 @@ interface ArchivedCourse {
   description: string;
   units: number;
   deleted_at: string;
-  instructor: string;         // Added
-  instructor_image?: string;  // Added
+  instructor: string; // Added
+  instructor_image?: string; // Added
 }
 
 interface ApiResponse {
@@ -23,7 +23,11 @@ interface ApiResponse {
 
 const ArchiveCourse: React.FC = () => {
   const [search, setSearch] = useState("");
-  const crumbs = [{ label: "Schedules", to: "/schedules" }, { label: "Archives" }];
+  const crumbs = [
+    { label: "Dashboard", to: "/dashboard" },
+    { label: "Schedules", to: "/schedules" },
+    { label: "Archives" },
+  ];
 
   const {
     data: courses = [],
@@ -36,7 +40,7 @@ const ArchiveCourse: React.FC = () => {
       const response = await apiService.get<ApiResponse>("/courses/archives");
       return response.data.data;
     },
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5,
   });
 
   useEffect(() => {
@@ -52,7 +56,9 @@ const ArchiveCourse: React.FC = () => {
     const desc = course.description.toLowerCase();
     const instructor = (course.instructor || "").toLowerCase();
     const query = search.toLowerCase();
-    return code.includes(query) || desc.includes(query) || instructor.includes(query);
+    return (
+      code.includes(query) || desc.includes(query) || instructor.includes(query)
+    );
   });
 
   return (
@@ -71,7 +77,9 @@ const ArchiveCourse: React.FC = () => {
 
           {/* Search Input */}
           <div className="relative w-full md:w-[300px]">
-            <label htmlFor="search" className="sr-only">Search archives</label>
+            <label htmlFor="search" className="sr-only">
+              Search archives
+            </label>
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               id="search"

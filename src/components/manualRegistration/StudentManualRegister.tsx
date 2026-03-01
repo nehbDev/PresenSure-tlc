@@ -311,7 +311,7 @@ const StudentManualRegister: React.FC = () => {
   return (
     <div className="space-y-4">
       <Toaster position="top-center" containerClassName="mt-10" />
-      <Breadcrumbs crumbs={[{ label: "Students", to: "/students" }, { label: "Manual Registration" }]} />
+      <Breadcrumbs crumbs={[{ label: "Dashboard", to: "/dashboard" },{ label: "Students", to: "/students" }, { label: "Manual Registration" }]} />
       <Stepper />
 
       <div className="bg-white rounded-lg shadow p-4 md:p-6 space-y-6">

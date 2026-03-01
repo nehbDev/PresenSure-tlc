@@ -143,6 +143,7 @@ const MySubjectDetails: React.FC = () => {
   }, [isError, error]);
 
   const crumbs = [
+    { label: "Dashboard", to: "/dashboard" },
     { label: "My Schedule", to: "/mySchedule" },
     { label: course ? course.subject_code : "Subject Details" },
   ];

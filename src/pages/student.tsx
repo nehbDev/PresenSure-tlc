@@ -70,7 +70,7 @@ const DropdownFilter: React.FC<{
   options: string[];
   selected: string;
   setSelected: (val: string) => void;
-  minWidth?: string; 
+  minWidth?: string;
 }> = ({ label, options, selected, setSelected, minWidth = "140px" }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -89,10 +89,10 @@ const DropdownFilter: React.FC<{
   }, []);
 
   return (
-    <div 
-      className="relative inline-block w-full sm:w-auto" 
+    <div
+      className="relative inline-block w-full sm:w-auto"
       ref={containerRef}
-      style={{ minWidth }} 
+      style={{ minWidth }}
     >
       <button
         type="button"
@@ -118,7 +118,7 @@ const DropdownFilter: React.FC<{
           />
         </svg>
       </button>
-      
+
       {/* Dropdown Menu - z-index ensures it sits on top */}
       {open && (
         <div className="origin-top-right absolute z-50 mt-1 w-full rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
@@ -176,7 +176,9 @@ const Card: React.FC<{
       <>
         {icon}
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">
+            {label}
+          </p>
           <p className="text-2xl font-bold text-gray-900">{value}</p>
         </div>
       </>
@@ -191,12 +193,15 @@ const Student: React.FC = () => {
   const [yearFilter, setYearFilter] = useState("");
   const [blockFilter, setBlockFilter] = useState("");
   const [activeTab, setActiveTab] = useState<"enrolled" | "not-enrolled">(
-    "enrolled"
+    "enrolled",
   );
 
   const navigate = useNavigate();
   const userRole = localStorage.getItem("userRole") ?? "guest";
-  const crumbs = [{ label: "Students" }];
+  const crumbs = [
+    { label: "Dashboard", to: "/dashboard" },
+    { label: "Students" },
+  ];
   const location = useLocation();
   const successMessage = location.state?.successMessage;
   const hasShownToast = useRef(false);
@@ -240,7 +245,9 @@ const Student: React.FC = () => {
   }, [successMessage]);
 
   const availablePrograms = departmentFilter
-    ? programsByDepartment[departmentFilter as keyof typeof programsByDepartment] || []
+    ? programsByDepartment[
+        departmentFilter as keyof typeof programsByDepartment
+      ] || []
     : allPrograms;
 
   useEffect(() => {
@@ -248,7 +255,7 @@ const Student: React.FC = () => {
   }, [departmentFilter]);
 
   let yearOptions: string[] = Array.from(
-    new Set(students.map((s) => s.year_level).filter((v): v is string => !!v))
+    new Set(students.map((s) => s.year_level).filter((v): v is string => !!v)),
   ).sort((a, b) => {
     const ixA = yearOrder.indexOf(a);
     const ixB = yearOrder.indexOf(b);
@@ -258,12 +265,12 @@ const Student: React.FC = () => {
 
   if (programFilter === "ACT") {
     yearOptions = yearOptions.filter((y) =>
-      ["First Year", "Second Year"].includes(y)
+      ["First Year", "Second Year"].includes(y),
     );
   }
 
   const blockRaw: string[] = Array.from(
-    new Set(students.map((s) => s.block).filter((v): v is string => !!v))
+    new Set(students.map((s) => s.block).filter((v): v is string => !!v)),
   );
   const blockOptions = ["C", ...blockRaw.filter((b) => b !== "C")].sort();
 
@@ -379,7 +386,6 @@ const Student: React.FC = () => {
       {/* 3. FILTERS & SEARCH */}
       <div className="bg-white p-4 rounded-md shadow-sm border border-gray-200">
         <div className="flex flex-col lg:flex-row gap-4">
-          
           {/* CHANGED: Removed overflow-x-auto.
             Used flex-wrap. This allows dropdowns to "breathe" and sit on top of other content 
             without getting clipped by a scroll container.
@@ -390,7 +396,7 @@ const Student: React.FC = () => {
               options={allDepartments}
               selected={departmentFilter}
               setSelected={setDepartmentFilter}
-              minWidth="200px" 
+              minWidth="200px"
             />
             <DropdownFilter
               label="Program"

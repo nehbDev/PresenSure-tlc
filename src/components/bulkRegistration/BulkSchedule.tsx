@@ -101,6 +101,7 @@ const BulkSchedule: React.FC = () => {
       />
       <Breadcrumbs
         crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
           { label: "Schedules", to: "/schedules" },
           { label: "Bulk Import" },
         ]}

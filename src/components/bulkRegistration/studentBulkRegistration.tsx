@@ -165,6 +165,7 @@ const StudentBulkRegistration: React.FC = () => {
       
       <Breadcrumbs
         crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
           { label: "Students", to: "/students" },
           { label: "Bulk Registration" },
         ]}

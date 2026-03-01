@@ -88,6 +88,7 @@ const CourseAttendanceSessions: React.FC = () => {
 
 
   const crumbs = [
+    { label: "Dashboard", to: "/dashboard" },
     { label: "Attendance Records", to: "/records" },
     { label: activeCourseInfo.code || "Course View" },
   ];

@@ -123,6 +123,7 @@ const InstructorManualRegister: React.FC = () => {
       <Toaster position="top-center" containerClassName="mt-10" />
       <Breadcrumbs
         crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
           { label: "Instructors", to: "/instructors" },
           { label: "Manual Registration" },
         ]}

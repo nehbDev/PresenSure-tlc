@@ -25,6 +25,7 @@ const BulkImageUpload: React.FC = () => {
   const [dragActive, setDragActive] = useState(false);
 
   const crumbs = [
+    { label: "Dashboard", to: "/dashboard" },
     {
       label: pageType === "student" ? "Students" : "Instructors",
       to: `/${pageType}s`,

@@ -153,6 +153,7 @@ const BulkInstructorRegistration: React.FC = () => {
       />
       <Breadcrumbs
         crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
           { label: "Instructors", to: "/instructors" },
           { label: "Bulk Registration" },
         ]}

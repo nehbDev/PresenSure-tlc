@@ -16,7 +16,7 @@ interface ApiResponse<T> {
 
 const MySchedule: React.FC = () => {
   const navigate = useNavigate();
-  const crumbs = [{ label: "My Schedules" }];
+  const crumbs = [{ label: "Dashboard", to: "/dashboard" },{ label: "My Schedules" }];
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 

@@ -86,12 +86,12 @@ const StudentDetails: React.FC = () => {
 
   const crumbs = isFromCourseDetails
     ? [
+        { label: "Dashboard", to: "/dashboard" },
         { label: "Schedules", to: "/schedules" },
-        // Use -1 for the 'to' path so it acts like a back button to the exact course they were viewing
         { label: "Course Details", to: -1 as any },
         { label: "Student Details" },
       ]
-    : [{ label: "Students", to: "/students" }, { label: "Student Details" }];
+    : [{ label: "Dashboard", to: "/dashboard" },{ label: "Students", to: "/students" }, { label: "Student Details" }];
   const {
     data: student,
     isLoading,

@@ -31,6 +31,7 @@ const SemesterDetails: React.FC = () => {
   const id = searchParams.get("id");
 
   const crumbs = [
+    { label: "Dashboard", to: "/dashboard" },
     { label: "Semesters", to: "/semester" },
     { label: "Semester Details" },
   ];

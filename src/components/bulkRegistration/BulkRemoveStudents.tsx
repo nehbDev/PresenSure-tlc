@@ -122,6 +122,7 @@ const BulkRemoveStudents: React.FC = () => {
     <div className="space-y-4">
       <Breadcrumbs
         crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
           { label: "My Schedule", to: "/mySchedule" },
           { label: course ? course.subject_code : "Subject", to: `/mySchedule/subject/${id}` },
           { label: "Bulk Remove" },

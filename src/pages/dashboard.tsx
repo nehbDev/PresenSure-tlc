@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import {
   FaGraduationCap,
@@ -7,14 +9,19 @@ import {
   FaSchool,
   FaClipboardList,
   FaClock,
-  FaArrowRight
+  FaArrowRight,
 } from "react-icons/fa";
 
 const Dashboard: React.FC = () => {
-  // ✅ 1. Get the absolute latest user from localStorage every time Dashboard loads
+  const hasShownToast = useRef(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const successMessage = location.state?.successMessage;
+
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
-  
+
   const role = user?.role || null;
   const userName = user?.firstName || user?.name || null;
 
@@ -23,7 +30,8 @@ const Dashboard: React.FC = () => {
       title: "Students",
       path: "/students",
       icon: <FaGraduationCap className="w-8 h-8 text-blue-500" />,
-      description: "Manage student profiles, enrollment, and general information.",
+      description:
+        "Manage student profiles, enrollment, and general information.",
       restrictedToAdmin: true,
     },
     {
@@ -58,25 +66,35 @@ const Dashboard: React.FC = () => {
       title: "My Schedule",
       path: "/mySchedule",
       icon: <FaClock className="w-8 h-8 text-blue-500" />,
-      description: "View your personal classes, shifts, and assigned timetable.",
+      description:
+        "View your personal classes, shifts, and assigned timetable.",
       restrictedToAdmin: false,
     },
   ];
 
-  // ✅ 2. Filter exactly as we did before
   const isUserInstructor = role?.toLowerCase().trim() === "instructor";
   const visibleItems = dashboardItems.filter(
-    (item) => !(isUserInstructor && item.restrictedToAdmin)
+    (item) => !(isUserInstructor && item.restrictedToAdmin),
   );
+  useEffect(() => {
+    if (successMessage && !hasShownToast.current) {
+      toast.success(successMessage);
+      hasShownToast.current = true;
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [successMessage]);
 
   return (
     <div className="space-y-4">
+      <Toaster position="top-center" />
+
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-gray-800">
-          Welcome back, {userName || "User"}! 👋
+          Welcome back, {userName || "User"}!s
         </h1>
         <p className="text-gray-500 mt-2">
-          Here is an overview of your PresenSure workspace. Select an option below to get started.
+          Here is an overview of your PresenSure workspace. Select an option
+          below to get started.
         </p>
       </div>
 

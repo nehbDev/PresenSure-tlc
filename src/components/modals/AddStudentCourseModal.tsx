@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
+import { createPortal } from "react-dom";
 
 interface AddStudentModalProps {
   isOpen: boolean;
@@ -17,6 +18,26 @@ const AddStudentCourseModal: React.FC<AddStudentModalProps> = ({
   const [studentId, setStudentId] = useState("");
 
   if (!isOpen) return null;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 1. Remove all non-digit characters from the input
+    const digits = e.target.value.replace(/\D/g, "");
+
+    // 2. Limit to exactly 8 digits (4 for year, 4 for ID)
+    const limitedDigits = digits.slice(0, 8);
+
+    // 3. Format back into C-XXXX-XXXX
+    let formattedValue = "";
+    if (limitedDigits.length > 0) {
+      if (limitedDigits.length <= 4) {
+        formattedValue = `C-${limitedDigits}`;
+      } else {
+        formattedValue = `C-${limitedDigits.slice(0, 4)}-${limitedDigits.slice(4)}`;
+      }
+    }
+
+    setStudentId(formattedValue);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +59,7 @@ const AddStudentCourseModal: React.FC<AddStudentModalProps> = ({
     setStudentId(""); // Clear input on success
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/20 bg-opacity-50 backdrop-blur-sm transition-opacity p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all scale-100">
         
@@ -66,10 +87,11 @@ const AddStudentCourseModal: React.FC<AddStudentModalProps> = ({
             </label>
             <input
               type="text"
+              inputMode="numeric" // Prompts numeric keyboard on mobile
               id="studentId"
-              placeholder="C-202X-XXXX"
+              placeholder="C-0000-0000"
               value={studentId}
-              onChange={(e) => setStudentId(e.target.value.toUpperCase())}
+              onChange={handleInputChange}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono uppercase text-gray-800"
               disabled={isLoading}
             />
@@ -90,7 +112,7 @@ const AddStudentCourseModal: React.FC<AddStudentModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || studentId.length < 11} // Optional: disable if incomplete
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
             >
               {isLoading ? (
@@ -105,7 +127,8 @@ const AddStudentCourseModal: React.FC<AddStudentModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -262,6 +262,7 @@ const StudentEdit: React.FC = () => {
       <Toaster position="top-center" containerClassName="mt-10" />
       <Breadcrumbs
         crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
           { label: "Students", to: "/students" },
           { label: "Student Details", to: `/students/student-details?id=${id}` },
           { label: "Edit Student" },

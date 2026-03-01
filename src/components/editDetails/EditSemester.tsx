@@ -179,7 +179,7 @@ const EditSemester: React.FC = () => {
   if (isFetching) {
     return (
       <div className="space-y-4">
-        <Breadcrumbs crumbs={[{ label: "Semesters", to: "/semester" }, { label: "Edit Semester" }]} />
+        <Breadcrumbs crumbs={[{ label: "Dashboard", to: "/dashboard" },{ label: "Semesters", to: "/semester" }, { label: "Edit Semester" }]} />
         <SemesterEditSkeleton />
       </div>
     );
@@ -188,7 +188,7 @@ const EditSemester: React.FC = () => {
   return (
     <div className="space-y-4">
       <Toaster position="top-center" containerClassName="mt-10" />
-      <Breadcrumbs crumbs={[{ label: "Semesters", to: "/semester" }, { label: "Semester Details", to: `/semester/details?id=${id}` }, { label: "Edit Semester" }]} />
+      <Breadcrumbs crumbs={[{ label: "Dashboard", to: "/dashboard" },{ label: "Semesters", to: "/semester" }, { label: "Semester Details", to: `/semester/details?id=${id}` }, { label: "Edit Semester" }]} />
       <Stepper />
 
       <div className="bg-white rounded-lg shadow-lg p-6 space-y-6">

@@ -108,7 +108,12 @@ const Schedule: React.FC = () => {
   return (
     <div className="space-y-4">
       <Toaster position="top-center" />
-      <Breadcrumbs crumbs={[{ label: "Schedules" }]} />
+      <Breadcrumbs
+        crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
+          { label: "Schedules" },
+        ]}
+      />
 
       {/* Header / Search Bar */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-white border-b border-gray-300 rounded-lg shadow-sm text-black">

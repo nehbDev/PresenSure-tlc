@@ -78,7 +78,12 @@ const SemesterPage = () => {
   return (
     <div className="space-y-4">
       <Toaster position="top-center" />
-      <Breadcrumbs crumbs={[{ label: "Semesters" }]} />
+      <Breadcrumbs
+        crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
+          { label: "Semesters" },
+        ]}
+      />
 
       <div className="p-4 grid grid-cols-1 items-center bg-white border-b border-gray-300 rounded-lg shadow-sm text-black">
         <div className="flex justify-end items-center space-x-3">

@@ -72,6 +72,7 @@ const InstructorDetails: React.FC = () => {
   const queryClient = useQueryClient();
 
   const crumbs = [
+    { label: "Dashboard", to: "/dashboard" },
     { label: "Instructors", to: "/instructors" },
     { label: "Instructor Details" },
   ];
@@ -257,7 +258,7 @@ const InstructorDetails: React.FC = () => {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <FaChalkboardTeacher className="text-blue-600" />
-              Teaching Load (Current Semester)
+              Courses
             </h2>
 
             {instructor.courses.length > 0 ? (

@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import apiService from "../../services/ApiService";
 import Breadcrumbs from "../../layout/Breadcrumbs";
 import { toast, Toaster } from "react-hot-toast";
-import StudentEditSkeleton from "../../components/contentLoader/StudentEditSkeleton"; 
+import StudentEditSkeleton from "../../components/contentLoader/StudentEditSkeleton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // --- Interfaces ---
@@ -31,7 +31,9 @@ const InstructorEdit: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [existingProfileImage, setExistingProfileImage] = useState<string | null>(null);
+  const [existingProfileImage, setExistingProfileImage] = useState<
+    string | null
+  >(null);
 
   // Form State - Matches the UI inputs
   const [form, setForm] = useState({
@@ -43,7 +45,7 @@ const InstructorEdit: React.FC = () => {
     sex: "",
     department: "",
     status: "",
-    password: "", 
+    password: "",
   });
 
   // Options
@@ -53,17 +55,13 @@ const InstructorEdit: React.FC = () => {
     "College of Teacher Education",
   ];
 
-
   // --- 1. QUERY LOGIC ---
-  const {
-    data: instructorData,
-    isLoading,
-  } = useQuery({
+  const { data: instructorData, isLoading } = useQuery({
     queryKey: ["instructor", id],
     queryFn: async () => {
       if (!id) throw new Error("No ID provided");
       const response = await apiService.get<InstructorDetailsResponse>(
-        `/getInstructorDetails?id=${id}`
+        `/getInstructorDetails?id=${id}`,
       );
       return response.data.data;
     },
@@ -98,7 +96,9 @@ const InstructorEdit: React.FC = () => {
   }, [instructorData]);
 
   // --- HANDLERS ---
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -119,11 +119,12 @@ const InstructorEdit: React.FC = () => {
     formData.append("user_id", form.userId);
     formData.append("firstname", form.firstname);
     formData.append("lastname", form.lastname);
-    
+
     // Handle optional fields
-    if (form.middleInitial) formData.append("middle_initial", form.middleInitial); // Crucial mapping
+    if (form.middleInitial)
+      formData.append("middle_initial", form.middleInitial); // Crucial mapping
     if (form.suffix) formData.append("suffix", form.suffix);
-    
+
     formData.append("sex", form.sex);
     formData.append("department", form.department);
     formData.append("status", form.status);
@@ -138,7 +139,7 @@ const InstructorEdit: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      
+
       // Send to Backend
       await apiService.post("/updateInstructor", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -163,7 +164,14 @@ const InstructorEdit: React.FC = () => {
   };
 
   // Helper to render inputs
-  const renderInput = (label: string, name: keyof typeof form, required = false, type = "text", disabled = false, placeholder = "") => (
+  const renderInput = (
+    label: string,
+    name: keyof typeof form,
+    required = false,
+    type = "text",
+    disabled = false,
+    placeholder = "",
+  ) => (
     <div>
       <label className="text-sm font-medium text-gray-700 block mb-1">
         {label} {required && <span className="text-red-500">*</span>}
@@ -181,7 +189,12 @@ const InstructorEdit: React.FC = () => {
     </div>
   );
 
-  const renderSelect = (label: string, name: keyof typeof form, options: { value: string; label: string }[], required = false) => (
+  const renderSelect = (
+    label: string,
+    name: keyof typeof form,
+    options: { value: string; label: string }[],
+    required = false,
+  ) => (
     <div>
       <label className="text-sm font-medium text-gray-700 block mb-1">
         {label} {required && <span className="text-red-500">*</span>}
@@ -207,8 +220,12 @@ const InstructorEdit: React.FC = () => {
       <Toaster position="top-center" containerClassName="mt-10" />
       <Breadcrumbs
         crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
           { label: "Instructors", to: "/instructors" },
-          { label: "Instructor Details", to: `/instructors/instructor-details?id=${id}` },
+          {
+            label: "Instructor Details",
+            to: `/instructors/instructor-details?id=${id}`,
+          },
           { label: "Edit Instructor" },
         ]}
       />
@@ -218,11 +235,12 @@ const InstructorEdit: React.FC = () => {
       ) : (
         <div className="bg-white rounded-lg shadow p-6 space-y-8">
           <div className="flex flex-col lg:flex-row gap-8">
-            
             {/* --- Personal Information Column --- */}
             <div className="flex-1 space-y-6">
               <div className="bg-blue-600 px-4 py-3 rounded-t-lg">
-                <h4 className="font-semibold text-white">Personal Information</h4>
+                <h4 className="font-semibold text-white">
+                  Personal Information
+                </h4>
               </div>
 
               {/* Image Uploader */}
@@ -232,9 +250,17 @@ const InstructorEdit: React.FC = () => {
                   className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-full cursor-pointer hover:border-blue-500 transition bg-gray-50 overflow-hidden relative group"
                 >
                   {file ? (
-                    <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover" />
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
                   ) : existingProfileImage ? (
-                    <img src={existingProfileImage} alt="Existing" className="w-full h-full object-cover" />
+                    <img
+                      src={existingProfileImage}
+                      alt="Existing"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-center p-2">
                       <span className="text-xs text-gray-400">No Image</span>
@@ -243,10 +269,20 @@ const InstructorEdit: React.FC = () => {
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <span className="text-white text-xs font-bold">Change</span>
                   </div>
-                  <input id="profileImage" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                  <input
+                    id="profileImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                 </label>
                 {file && (
-                  <button type="button" className="text-red-500 text-xs hover:underline" onClick={() => setFile(null)}>
+                  <button
+                    type="button"
+                    className="text-red-500 text-xs hover:underline"
+                    onClick={() => setFile(null)}
+                  >
                     Revert to original
                   </button>
                 )}
@@ -262,8 +298,11 @@ const InstructorEdit: React.FC = () => {
                 {renderSelect(
                   "Sex",
                   "sex",
-                  [{ value: "Male", label: "Male" }, { value: "Female", label: "Female" }],
-                  true
+                  [
+                    { value: "Male", label: "Male" },
+                    { value: "Female", label: "Female" },
+                  ],
+                  true,
                 )}
               </div>
             </div>
@@ -271,21 +310,28 @@ const InstructorEdit: React.FC = () => {
             {/* --- Professional Information Column --- */}
             <div className="flex-1 space-y-6">
               <div className="bg-blue-600 px-4 py-3 rounded-t-lg">
-                <h4 className="font-semibold text-white">Professional Information</h4>
+                <h4 className="font-semibold text-white">
+                  Professional Information
+                </h4>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
                 {renderSelect(
                   "Department",
                   "department",
-                  departments.map(d => ({ value: d, label: d })),
-                  true
+                  departments.map((d) => ({ value: d, label: d })),
+                  true,
                 )}
 
-
-
                 <div className="pt-4 border-t border-gray-100 mt-2">
-                   {renderInput("Password", "password", false, "password", false, "Leave blank to keep current password")}
+                  {renderInput(
+                    "Password",
+                    "password",
+                    false,
+                    "password",
+                    false,
+                    "Leave blank to keep current password",
+                  )}
                 </div>
               </div>
             </div>

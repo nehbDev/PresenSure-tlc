@@ -1,5 +1,6 @@
 import React from "react";
 import { FaExclamationTriangle, FaInfoCircle } from "react-icons/fa";
+import { createPortal } from "react-dom";
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -28,7 +29,7 @@ const RemoveStudentConfirmation: React.FC<ConfirmationModalProps> = ({
 
   const isDanger = type === "danger";
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/20 bg-opacity-50 backdrop-blur-sm transition-opacity p-4 animate-fadeIn">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden transform transition-all scale-100">
         
@@ -80,7 +81,8 @@ const RemoveStudentConfirmation: React.FC<ConfirmationModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

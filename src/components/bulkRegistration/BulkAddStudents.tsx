@@ -204,6 +204,7 @@ const BulkAddStudents: React.FC = () => {
     <div className="space-y-4">
       <Breadcrumbs
         crumbs={[
+          { label: "Dashboard", to: "/dashboard" },
           { label: "My Schedule", to: "/myschedule" },
           { 
             label: course 

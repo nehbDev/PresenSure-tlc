@@ -68,6 +68,7 @@ const ScheduleDetails: React.FC = () => {
   const [isArchiving, setIsArchiving] = useState(false);
 
   const crumbs = [
+    { label: "Dashboard", to: "/dashboard" },
     { label: "Schedules", to: "/schedules" },
     { label: "Course Details" },
   ];

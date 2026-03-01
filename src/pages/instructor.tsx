@@ -195,7 +195,7 @@ const Instructor: React.FC = () => {
   return (
     <div className="space-y-4">
       <Toaster position="top-center" />
-      <Breadcrumbs crumbs={[{ label: "Instructors" }]} />
+      <Breadcrumbs crumbs={[{ label: "Dashboard", to: "/dashboard" },{ label: "Instructors" }]} />
 
       {/* Summary cards - Added loading prop */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
