@@ -81,8 +81,23 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  // ✅ NEW: Function to trigger download via hidden iframe
+  const handleDownloadSystem = () => {
+    toast.success("Starting download...");
+    const url = "https://github.com/nehbDev/PresenSure-tlc/releases/download/v1.0/PresenSure.04.apk";
+    
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = url;
+    document.body.appendChild(iframe);
+
+    // Clean up the DOM after a few seconds
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 5000);
+  };
+
   return (
-    // Added 'relative' to the container so the absolute button positions correctly
     <div className="min-h-screen relative flex flex-col items-center justify-center bg-gradient-to-t from-blue-500 to-blue-200 p-4 sm:p-6 lg:p-8">
       <Toaster
         position="top-center"
@@ -98,21 +113,21 @@ const LoginPage: React.FC = () => {
         }}
       />
 
-      {/* ✅ NEW LOCATION: Top Right Download Button */}
-      <a
-        href="https://github.com/nehbDev/PresenSure-tlc/releases/download/v1.0/PresenSure.04.apk"
-        download="PresenSure.04.apk"
+      {/* ✅ UPDATED: Changed from <a> tag to <button> */}
+      <button
+        onClick={handleDownloadSystem}
+        type="button"
         className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg-blue-700 text-white hover:bg-white hover:text-blue-700 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 z-50 group border border-white/20"
       >
         <FaMobileAlt className="h-4 w-4" />
         <span className="text-xs font-bold tracking-wide hidden sm:inline">
-          Download App
+          Download System
         </span>
         <span className="text-xs font-bold tracking-wide sm:hidden">
-          Download App
+          Download System
         </span>
         <FaDownload className="h-3 w-3 ml-1 opacity-50 group-hover:opacity-100 transition-opacity" />
-      </a>
+      </button>
 
       {/* Header Section */}
       <div className="w-full max-w-sm flex flex-col items-center mb-6 sm:mb-8">
@@ -214,8 +229,6 @@ const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* REMOVED: Old Download App Section */}
         </div>
       </div>
 
