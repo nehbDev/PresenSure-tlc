@@ -100,7 +100,7 @@ const LoginPage: React.FC = () => {
 
       {/* ✅ NEW LOCATION: Top Right Download Button */}
       <a
-        href="https://github.com/nehbDev/PresenSure-tlc/releases/latest/download/PresenSure.03.apk"
+        href="https://github.com/nehbDev/PresenSure-tlc/releases/download/v1.0/PresenSure.04.apk"
         target="_blank"
         rel="noopener noreferrer"
         className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 bg-blue-700 text-white hover:bg-white hover:text-blue-700 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 z-50 group border border-white/20"

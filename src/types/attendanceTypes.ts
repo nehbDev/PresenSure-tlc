@@ -37,4 +37,6 @@ export interface StudentResult {
 
   // The backend REPLACED locations_data with this:
   away_analysis: AwayAnalysis;
+
+  all_detections?: { detected_at: string; rssi: number; }[]
 }
