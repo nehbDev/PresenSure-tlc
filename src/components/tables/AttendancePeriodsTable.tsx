@@ -194,19 +194,33 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
 
   const maleStudents = useMemo(() => {
     return searchedStudents.filter(
-      (s) => s.sex.toLowerCase() === "m" || s.sex.toLowerCase() === "male"
+      (s) => s.sex.toLowerCase() === "m" || s.sex.toLowerCase() === "male",
     );
   }, [searchedStudents]);
 
   const femaleStudents = useMemo(() => {
     return searchedStudents.filter(
-      (s) => s.sex.toLowerCase() === "f" || s.sex.toLowerCase() === "female"
+      (s) => s.sex.toLowerCase() === "f" || s.sex.toLowerCase() === "female",
     );
   }, [searchedStudents]);
 
   const periodOptions = useMemo(() => {
     return data ? Object.keys(data.periods_metadata) : [];
   }, [data]);
+
+  const hasSessions = useMemo(() => {
+    if (!data || !data.periods_metadata) return false;
+
+    // If a specific period is selected, check if it has sessions
+    if (selectedPeriod) {
+      return (data.periods_metadata[selectedPeriod]?.sessions?.length || 0) > 0;
+    }
+
+    // If "All" is selected, check if ANY period has at least one session
+    return Object.values(data.periods_metadata).some(
+      (meta) => (meta.sessions?.length || 0) > 0,
+    );
+  }, [data, selectedPeriod]);
 
   const columns = useMemo(() => {
     if (!data) return [];
@@ -330,7 +344,7 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
     headRow: {
       style: {
         // Removed border radius here since the title wrapper handles the curved edges
-        borderTopLeftRadius: "0px", 
+        borderTopLeftRadius: "0px",
         borderTopRightRadius: "0px",
         overflow: "hidden",
       },
@@ -346,13 +360,17 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
     dataList: StudentReport[],
     headerColor: string,
     titleBgClass: string,
-    titleTextClass: string
+    titleTextClass: string,
   ) => (
     <div className="space-y-2">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         {/* Title Bar styling mapped to Male/Female */}
-        <div className={`p-4 border-b border-gray-200 flex justify-between items-center ${titleBgClass}`}>
-          <h2 className={`text-lg font-bold flex items-center gap-2 ${titleTextClass}`}>
+        <div
+          className={`p-4 border-b border-gray-200 flex justify-between items-center ${titleBgClass}`}
+        >
+          <h2
+            className={`text-lg font-bold flex items-center gap-2 ${titleTextClass}`}
+          >
             {title}
           </h2>
         </div>
@@ -402,11 +420,13 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
 
         <button
           onClick={handleExport}
-          disabled={!data || loading}
-          className="flex items-center justify-center gap-2 px-4 h-[42px] bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-md shadow transition-colors font-medium text-sm flex-shrink-0"
+          disabled={
+            loading || !data || data.students.length === 0 || !hasSessions
+          }
+          className="flex items-center justify-center gap-2 px-4 h-[42px] bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-70 text-white rounded-md shadow transition-colors font-medium text-sm flex-shrink-0"
         >
           <FaFileExcel className="w-4 h-4" />
-          <span className="hidden sm:inline">Export</span>
+          <span className="hidden sm:inline">Export to Excel</span>
         </button>
       </div>
 
@@ -419,10 +439,22 @@ const AttendancePeriodsTable: React.FC<Props> = ({ data, loading }) => {
       ) : (
         <div className="space-y-6">
           {/* MALE TABLE */}
-          {renderTable("Male", maleStudents, "#2563eb", "bg-blue-50", "text-blue-800")}
+          {renderTable(
+            "Male",
+            maleStudents,
+            "#2563eb",
+            "bg-blue-50",
+            "text-blue-800",
+          )}
 
           {/* FEMALE TABLE */}
-          {renderTable("Female", femaleStudents, "#db2777", "bg-pink-50", "text-pink-800")}
+          {renderTable(
+            "Female",
+            femaleStudents,
+            "#db2777",
+            "bg-pink-50",
+            "text-pink-800",
+          )}
         </div>
       )}
     </div>

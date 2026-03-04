@@ -169,7 +169,7 @@ const AttendanceSessionDetails: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition-colors font-medium text-sm"
             >
               <FaFileExcel className="w-4 h-4" />
-              Download Excel
+              Export to Excel
             </button>
           </div>
         )}

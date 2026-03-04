@@ -145,8 +145,6 @@ const CourseAttendanceSessions: React.FC = () => {
           </button>
         </div>
 
-        {/* Content Area */}
-        {/* We pass the 'loading' prop to the tables so they can render their own TableSkeleton */}
         <div>
           {activeTab === "schedules" ? (
             <AttendanceSchedulesTable 

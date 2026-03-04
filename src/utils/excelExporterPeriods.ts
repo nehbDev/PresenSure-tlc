@@ -126,7 +126,7 @@ export const exportPeriodsToExcel = (data: PeriodsApiResponse, selectedPeriod?: 
   excelData.push([]); 
   
   // 4
-  excelData.push(["GRADING / ATTENDANCE MATRIX"]);
+  excelData.push(["GRADING / ATTENDANCE RECORDS"]);
   merges.push({ s: { r: 4, c: 0 }, e: { r: 4, c: totalCols } });
   
   // 5
@@ -306,8 +306,8 @@ export const exportPeriodsToExcel = (data: PeriodsApiResponse, selectedPeriod?: 
     pivotTables: false
   };
 
-  // ✅ CHANGE 4: Append filename with specific period if selected
-  const filenameSuffix = (selectedPeriod && selectedPeriod !== "") ? selectedPeriod : "All_Periods";
+  const cleanCourseCode = data.course.replace(/\s+/g, "");
+  const fileName = `${cleanCourseCode}_Attendance_Records.xlsx`;
   XLSX.utils.book_append_sheet(wb, ws, "Matrix");
-  XLSX.writeFile(wb, `Matrix_${data.course}_${filenameSuffix}.xlsx`);
+  XLSX.writeFile(wb, fileName);
 };

@@ -223,5 +223,5 @@ export const exportAttendanceToExcel = (
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Attendance");
   const safeCode = (sessionData?.course?.code || "Report").replace(/[^a-z0-9]/gi, '_');
-  XLSX.writeFile(wb, `Attendance_${safeCode}_${sessionData?.date || "Date"}.xlsx`);
+  XLSX.writeFile(wb, `${safeCode}-${sessionData?.date || "Date"}.xlsx`);
 };

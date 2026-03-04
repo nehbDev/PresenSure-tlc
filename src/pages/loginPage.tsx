@@ -121,10 +121,10 @@ const LoginPage: React.FC = () => {
       >
         <FaMobileAlt className="h-4 w-4" />
         <span className="text-xs font-bold tracking-wide hidden sm:inline">
-          Download System
+          Download App
         </span>
         <span className="text-xs font-bold tracking-wide sm:hidden">
-          Download System
+          Download App
         </span>
         <FaDownload className="h-3 w-3 ml-1 opacity-50 group-hover:opacity-100 transition-opacity" />
       </button>
